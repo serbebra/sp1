@@ -46,6 +46,9 @@ pub struct Runtime {
     /// A trace of the MUL events.
     pub mul_events: Vec<AluEvent>,
 
+    /// A trace of the ADD, and ADDI events.
+    pub divrem_events: Vec<AluEvent>,
+
     /// A trace of the SUB events.
     pub sub_events: Vec<AluEvent>,
 
@@ -75,6 +78,7 @@ impl Runtime {
             add_events: Vec::new(),
             mul_events: Vec::new(),
             sub_events: Vec::new(),
+            divrem_events: Vec::new(),
             bitwise_events: Vec::new(),
             shift_events: Vec::new(),
             lt_events: Vec::new(),
@@ -203,6 +207,9 @@ impl Runtime {
             }
             Opcode::SLT | Opcode::SLTU => {
                 self.lt_events.push(event);
+            }
+            Opcode::DIVU | Opcode::REMU => {
+                self.divrem_events.push(event);
             }
             _ => {}
         }
