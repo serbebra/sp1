@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1706238132608,
+  "lastUpdate": 1706244077424,
   "repoUrl": "https://github.com/succinctlabs/vm",
   "entries": {
     "Benchmark": [
@@ -59,6 +59,36 @@ window.BENCHMARK_DATA = {
             "name": "prove/fibonacci: cycles=188618",
             "value": 10191242847,
             "range": "± 517087256",
+            "unit": "ns/iter"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "ratankaliani@berkeley.edu",
+            "name": "Ratan Kaliani",
+            "username": "ratankaliani"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "fa16fc5b16bf5db4e234038650899fa72f1893b6",
+          "message": "feat: ed_decompress precompile (#114)\n\nCo-authored-by: Uma Roy <uma.roy.us@gmail.com>\r\nCo-authored-by: Chris Tian <chris@succinct.xyz>",
+          "timestamp": "2024-01-25T20:37:18-08:00",
+          "tree_id": "a9ff92361bf063abd3e93560ab058a6ae390c70f",
+          "url": "https://github.com/succinctlabs/vm/commit/fa16fc5b16bf5db4e234038650899fa72f1893b6"
+        },
+        "date": 1706244075505,
+        "tool": "cargo",
+        "benches": [
+          {
+            "name": "prove/fibonacci: cycles=188618",
+            "value": 13214865702,
+            "range": "± 333080480",
             "unit": "ns/iter"
           }
         ]
