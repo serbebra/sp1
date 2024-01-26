@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1706219839540,
+  "lastUpdate": 1706238132608,
   "repoUrl": "https://github.com/succinctlabs/vm",
   "entries": {
     "Benchmark": [
@@ -29,6 +29,36 @@ window.BENCHMARK_DATA = {
             "name": "prove/fibonacci: cycles=188618",
             "value": 13218956974,
             "range": "± 385476849",
+            "unit": "ns/iter"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "puma314@users.noreply.github.com",
+            "name": "puma314",
+            "username": "puma314"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "42008a4431734add98dc9ff15e32b2c4d7dd42b0",
+          "message": "feat: io::read io::write (#126)",
+          "timestamp": "2024-01-25T18:58:53-08:00",
+          "tree_id": "8eb0130a16a7fd62779059b2079647f541966452",
+          "url": "https://github.com/succinctlabs/vm/commit/42008a4431734add98dc9ff15e32b2c4d7dd42b0"
+        },
+        "date": 1706238131123,
+        "tool": "cargo",
+        "benches": [
+          {
+            "name": "prove/fibonacci: cycles=188618",
+            "value": 10191242847,
+            "range": "± 517087256",
             "unit": "ns/iter"
           }
         ]
