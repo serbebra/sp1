@@ -4,6 +4,8 @@ extern crate succinct_zkvm;
 
 use core::time::Duration;
 use serde::Deserialize;
+use std::fs::File;
+use std::io::BufReader;
 use tendermint::{node::Id, validator::Info};
 use tendermint_light_client_verifier::{
     options::Options,
@@ -11,7 +13,35 @@ use tendermint_light_client_verifier::{
     ProdVerifier, Verdict, Verifier,
 };
 
-succinct_zkvm::entrypoint!(main);
+succinct_zkvm::entrypoint!(main, crate::TendermintInitializer);
+
+struct TendermintInitializer;
+
+#[derive(Debug, Deserialize)]
+struct TendermintInputJson {
+    pub input: String,
+}
+
+impl succinct_zkvm::outside::Initializer for TendermintInitializer {
+    fn init(&self, input: Option<String>) -> Vec<u8> {
+        let file =
+            File::open(input.expect("Input JSON file required")).expect("Failed to open file");
+        let reader = BufReader::new(file);
+        let input: TendermintInputJson = serde_json::from_reader(reader).unwrap();
+
+        println!("input: {:?}", input);
+
+        vec![]
+    }
+}
+
+// impl succinct_zkvm::outside::JsonInitializer for TendermintInitializer {
+//     type Json = TendermintInputJson;
+//     fn init_json(&self, input: TendermintInputJson) -> Vec<u8> {
+//         // Initialize the logger
+//         vec![]
+//     }
+// }
 
 #[derive(Debug, Deserialize)]
 pub struct CommitResponse {

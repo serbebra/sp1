@@ -15,18 +15,131 @@ pub mod syscall;
 
 pub const WORD_SIZE: usize = 4;
 
+#[cfg(not(target_os = "zkvm"))]
+pub mod outside {
+    use clap::Parser;
+    use serde::de::DeserializeOwned;
+    use std::fs::File;
+    use std::io::BufReader;
+
+    pub trait Initializer {
+        fn init(&self, input: Option<String>) -> Vec<u8>;
+    }
+
+    // pub trait JsonInitializer {
+    //     type Json: DeserializeOwned;
+    //     fn init_json(&self, input: Self::Json) -> Vec<u8>;
+    // }
+
+    // impl<T: JsonInitializer> Initializer for T {
+    //     fn init(&self, input: String) -> Vec<u8> {
+    //         let file = File::open(input).unwrap();
+    //         let reader = BufReader::new(file);
+    //         let input: T::Json = serde_json::from_reader(reader).unwrap();
+    //         self.init_json(input)
+    //     }
+    // }
+
+    /// Simple program to greet a person
+    #[derive(Parser, Debug)]
+    #[command(author, version, about, long_about = None)]
+    pub struct Cli {
+        // /// Name of the person to greet
+        // #[arg(short, long)]
+        // name: String,
+
+        // /// Number of times to greet
+        // #[arg(short, long, default_value_t = 1)]
+        // count: u8,
+
+        // Whether to just run the code instead of proving
+        #[arg(long)]
+        pub novm: bool,
+
+        #[arg(short, long)]
+        pub input: Option<String>,
+    }
+}
+
+// #[macro_export]
+// macro_rules! entrypoint {
+//     ($path:path) => {
+//         const ZKVM_ENTRY: fn() = $path;
+
+//         mod zkvm_generated_main {
+//             use succinct_zkvm::get_initializer;
+
+//             #[no_mangle]
+//             fn main() {
+//                 #[cfg(target_os = "zkvm")]
+//                 super::ZKVM_ENTRY();
+
+//                 #[cfg(not(target_os = "zkvm"))]
+//                 {
+//                     get_initializer().init("".to_string());
+//                 }
+//             }
+//         }
+//     };
+// }
+
 #[macro_export]
 macro_rules! entrypoint {
-    ($path:path) => {
+    // Variant with initializer override
+    ($path:path, $initializer:expr) => {
         const ZKVM_ENTRY: fn() = $path;
 
+        #[cfg(target_os = "zkvm")]
         mod zkvm_generated_main {
+
             #[no_mangle]
             fn main() {
-                super::ZKVM_ENTRY()
+                super::ZKVM_ENTRY();
             }
         }
-    };
+
+        #[cfg(not(target_os = "zkvm"))]
+        mod novm_main {
+            use clap::Parser;
+            use std::io::Write;
+            use succinct_zkvm::outside::{Cli, Initializer};
+
+            fn ensure_initializer_trait<T: Initializer>(_t: T) {}
+
+            #[no_mangle]
+            fn main() {
+                ensure_initializer_trait($initializer);
+                let args = Cli::parse();
+
+                if args.novm {
+                    super::ZKVM_ENTRY();
+                } else {
+                    let bytes = $initializer.init(args.input);
+                    // Write bytes directly to stdout
+                    println!("{}", hex::encode(bytes));
+                }
+
+                // let args = super::ZKVM_ENTRY();
+            }
+        }
+    }; // // Variant without initializer override
+       // ($path:path) => {
+       //     const ZKVM_ENTRY: fn() = $path;
+
+       //     mod zkvm_generated_main {
+
+       //         #[no_mangle]
+       //         fn main() {
+       //             #[cfg(target_os = "zkvm")]
+       //             super::ZKVM_ENTRY();
+
+       //             #[cfg(not(target_os = "zkvm"))]
+       //             {
+       //                 println!("default");
+       //             }
+       //         }
+       //     }
+       // };
 }
 
 #[cfg(target_os = "zkvm")]
@@ -78,3 +191,39 @@ unsafe impl GlobalAlloc for SimpleAlloc {
 #[cfg(target_os = "zkvm")]
 #[global_allocator]
 static HEAP: SimpleAlloc = SimpleAlloc;
+
+// enum ProgramInput {
+//     Bytes(Vec<u8>),
+//     Json
+// }
+
+// impl<T: JsonInitializer> Initializer for T {
+//     fn init(&self, input: String) -> Vec<u8> {
+//         let file = File::open(input).unwrap();
+//         let reader = BufReader::new(file);
+//         let input: T::Json = serde_json::from_reader(reader).unwrap();
+//         self.init_json(input)
+//     }
+// }
+
+// pub trait HexInitializer {
+//     const a: u8 = 2;
+//     fn init_hex(&self, input: Vec<u8>) -> Vec<u8>;
+// }
+
+// impl<T: HexInitializer> Initializer for T {
+//     fn init(&self, input: String) -> Vec<u8> {
+//         let hex = input.trim_start_matches("0x");
+//         let bytes = hex::decode(hex).unwrap();
+//         self.init_hex(bytes)
+//     }
+// }
+
+// pub struct DefaultInitializer;
+
+// impl Initializer for DefaultInitializer {
+//     fn init(&self, _: String) -> Vec<u8> {
+//         println!("default initializer");
+//         vec![]
+//     }
+// }
