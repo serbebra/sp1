@@ -1,0 +1,14 @@
+[workspace]
+[package]
+version = "0.1.0"
+name = "poseidon2-zkvm"
+edition = "2021"
+
+[dependencies]
+succinct-zkvm = { path = "../../zkvm" }
+p3-poseidon2 = { path = "../../../plonky3/poseidon2" }
+p3-mds = { path = "../../../plonky3/mds" }
+p3-field = { path = "../../../plonky3/field" }
+p3-baby-bear = { path = "../../../plonky3/baby-bear" }
+p3-symmetric = { path = "../../../plonky3/symmetric" }
+
