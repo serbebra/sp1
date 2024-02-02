@@ -136,7 +136,7 @@ pub(super) mod baby_bear_poseidon2 {
     use p3_symmetric::{PaddingFreeSponge, TruncatedPermutation};
     use rand::Rng;
 
-    use crate::stark::StarkConfig;
+    use crate::{stark::StarkConfig, utils::poseidon2_instance::RC_16_30};
 
     use super::StarkUtils;
 
@@ -174,6 +174,29 @@ pub(super) mod baby_bear_poseidon2 {
         pub fn new<R: Rng>(rng: &mut R) -> Self {
             let mds = MyMds::default();
             let perm = Perm::new_from_rng(8, 22, mds, DiffusionMatrixBabybear, rng);
+
+            let hash = MyHash::new(perm.clone());
+
+            let compress = MyCompress::new(perm.clone());
+
+            let val_mmcs = ValMmcs::new(hash, compress);
+
+            let challenge_mmcs = ChallengeMmcs::new(val_mmcs.clone());
+
+            let dft = Dft {};
+
+            let fri_config = MyFriConfig::new(1, 100, 16, challenge_mmcs);
+            let ldt = FriLdt { config: fri_config };
+
+            let pcs = Pcs::new(dft, val_mmcs, ldt);
+
+            Self { pcs, perm }
+        }
+
+        pub fn new_const() -> Self {
+            let mds = MyMds::default();
+
+            let perm = Perm::new(8, 22, RC_16_30.to_vec(), mds, DiffusionMatrixBabybear);
 
             let hash = MyHash::new(perm.clone());
 
