@@ -25,6 +25,9 @@ pub const P2_TOTAL_ROUNDS: usize = P2_DEFAULT_ROUNDS_F + P2_DEFAULT_ROUNDS_P;
 /// The number of times to loop in the first or the last external round of Poseidon2.
 pub const P2_EXTERNAL_ROUND_COUNT: usize = P2_DEFAULT_ROUNDS_F / 2;
 
+/// The number of times to loop in the internal round of Poseidon2.
+pub const P2_INTERNAL_ROUND_COUNT: usize = P2_DEFAULT_ROUNDS_P;
+
 pub const P2_SBOX_EXPONENT: usize = 7;
 
 /// The number of bits necessary to express `P2_SBOX_EXPONENT`. Used to decide how many times
