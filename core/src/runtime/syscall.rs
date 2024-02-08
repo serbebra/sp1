@@ -55,6 +55,8 @@ impl Syscall {
             107 => Syscall::SECP256K1_ADD,
             108 => Syscall::SECP256K1_DOUBLE,
             109 => Syscall::SECP256K1_DECOMPRESS,
+            110 => Syscall::ENTER_UNCONSTRAINED,
+            111 => Syscall::EXIT_UNCONSTRAINED,
             999 => Syscall::WRITE,
             _ => panic!("invalid syscall number: {}", value),
         }
