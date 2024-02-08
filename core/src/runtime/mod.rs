@@ -709,7 +709,7 @@ impl Runtime {
                                     self.cycle_tracker
                                         .insert(fn_name.to_string(), (self.global_clk, depth));
                                     let padding = (0..depth).map(|_| "│ ").collect::<String>();
-                                    log::info!("{}┌╴{}", padding, fn_name);
+                                    // log::info!("{}┌╴{}", padding, fn_name);
                                 } else if s.contains("cycle-tracker-end:") {
                                     let fn_name = s
                                         .split("cycle-tracker-end:")
@@ -726,11 +726,11 @@ impl Runtime {
                                         .cumulative_cycle_tracker
                                         .entry(fn_name.to_string())
                                         .or_insert(0) += cycles;
-                                    log::info!(
-                                        "{}└╴{} cycles",
-                                        padding,
-                                        u32_to_comma_separated(cycles)
-                                    );
+                                    // log::info!(
+                                    //     "{}└╴{} cycles",
+                                    //     padding,
+                                    //     u32_to_comma_separated(cycles)
+                                    // );
                                 } else {
                                     log::info!("stdout: {}", s.trim_end());
                                 }
