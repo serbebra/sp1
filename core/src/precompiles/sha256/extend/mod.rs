@@ -46,9 +46,10 @@ pub mod extend_tests {
 
     use crate::{
         alu::AluEvent,
+        lookup::{debug_interactions_with_all_chips, InteractionKind},
         runtime::{Instruction, Opcode, Program, Runtime, Segment},
         stark::LocalProver,
-        utils::{BabyBearPoseidon2, Chip, StarkUtils},
+        utils::{setup_logger, BabyBearPoseidon2, Chip, StarkUtils},
     };
 
     use super::ShaExtendChip;
@@ -81,6 +82,7 @@ pub mod extend_tests {
 
     #[test]
     fn prove_babybear() {
+        setup_logger();
         let config = BabyBearPoseidon2::new(&mut rand::thread_rng());
         let mut challenger = config.challenger();
 
@@ -88,6 +90,12 @@ pub mod extend_tests {
         let mut runtime = Runtime::new(program);
         runtime.write_stdin_slice(&[10]);
         runtime.run();
+
+        debug_interactions_with_all_chips(
+            &runtime.segment,
+            Some(&runtime.global_segment),
+            vec![InteractionKind::Memory],
+        );
 
         runtime.prove::<_, _, BabyBearPoseidon2, LocalProver<_>>(&config, &mut challenger);
     }

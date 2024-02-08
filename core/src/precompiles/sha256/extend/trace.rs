@@ -27,7 +27,10 @@ impl<F: PrimeField> Chip<F> for ShaExtendChip {
                 let cols: &mut ShaExtendCols<F> = row.as_mut_slice().borrow_mut();
 
                 cols.populate_flags(j);
-                cols.segment = F::from_canonical_u32(event.segment);
+
+                // Adding 100 here to create send-receive discrepancies. This is to demonstrate the
+                // unexpected behavior I encountered, this isn't a real change.
+                cols.segment = F::from_canonical_u32(event.segment + 100);
                 cols.clk = F::from_canonical_u32(event.clk);
                 cols.w_ptr = F::from_canonical_u32(event.w_ptr);
 

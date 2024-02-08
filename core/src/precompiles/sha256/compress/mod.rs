@@ -43,7 +43,7 @@ pub mod compress_tests {
     use crate::{
         runtime::{Instruction, Opcode, Program, Runtime},
         stark::LocalProver,
-        utils::{BabyBearPoseidon2, StarkUtils},
+        utils::{setup_logger, BabyBearPoseidon2, StarkUtils},
     };
 
     pub fn sha_compress_program() -> Program {
@@ -65,6 +65,7 @@ pub mod compress_tests {
 
     #[test]
     fn prove_babybear() {
+        setup_logger();
         let config = BabyBearPoseidon2::new(&mut rand::thread_rng());
         let mut challenger = config.challenger();
 
