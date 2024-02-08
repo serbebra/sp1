@@ -330,13 +330,13 @@ impl Runtime {
         }
         println!("cycle-tracker-end: verifying_interactions");
 
-        let func_counts = p3_baby_bear::FUNC_COUNTS.lock().unwrap();
-        let mut pairs: Vec<(_, _)> = func_counts.clone().into_iter().collect();
-        pairs.sort_by(|a, b| b.1.cmp(&a.1));
-        for (fn_name, count) in pairs {
-            log::info!("{}: {}", fn_name, count);
-        }
-        drop(func_counts);
+        // let func_counts = p3_baby_bear::FUNC_COUNTS.lock().unwrap();
+        // let mut pairs: Vec<(_, _)> = func_counts.clone().into_iter().collect();
+        // pairs.sort_by(|a, b| b.1.cmp(&a.1));
+        // for (fn_name, count) in pairs {
+        //     log::info!("{}: {}", fn_name, count);
+        // }
+        // drop(func_counts);
 
         match sum.is_zero() {
             true => Ok(()),

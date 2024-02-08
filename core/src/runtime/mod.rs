@@ -45,6 +45,25 @@ pub enum AccessPosition {
     A = 3,
 }
 
+/// Holds data to track changes made to the runtime since a fork point.
+#[derive(Debug, Clone, Default)]
+struct ForkState {
+    /// Original global_clk
+    pub(crate) global_clk: u32,
+    /// Original clk
+    pub(crate) clk: u32,
+    /// Original program counter
+    pub(crate) pc: u32,
+    /// Only contains the original memory values for addresses that have been modified
+    pub(crate) memory_diff: HashMap<u32, Option<u32>, BuildNoHashHasher<u32>>,
+    /// Full memory_access map from original state
+    pub(crate) memory_access: HashMap<u32, (u32, u32), BuildNoHashHasher<u32>>,
+    /// Full record from original state
+    pub(crate) record: Record,
+    /// Full segment from original state
+    pub(crate) segment: Segment,
+}
+
 #[derive(Debug, Copy, Clone, Default)]
 pub struct Record {
     pub a: Option<MemoryRecordEnum>,
@@ -114,6 +133,13 @@ pub struct Runtime {
 
     /// A counter for the number of cumulative cycles that have been executed in certain functions.
     pub cumulative_cycle_tracker: HashMap<String, u32>,
+
+    /// Whether the runtime is in constrained mode or not.
+    /// In unconstrained mode, any events, clock, register, or memory changes are reset after leaving
+    /// the unconstrained block. The only thing preserved is writes to the hint stream.
+    pub unconstrained: bool,
+
+    pub(self) unconstrained_state: ForkState,
 }
 
 impl Runtime {
@@ -143,6 +169,8 @@ impl Runtime {
             global_segment: Segment::default(),
             cycle_tracker: HashMap::new(),
             cumulative_cycle_tracker: HashMap::new(),
+            unconstrained: false,
+            unconstrained_state: ForkState::default(),
         }
     }
 
@@ -799,6 +827,48 @@ impl Runtime {
                         self.clk = precompile_rt.clk;
                         assert_eq!(init_clk + 4, self.clk);
                     }
+                    Syscall::ENTER_UNCONSTRAINED => {
+                        if self.unconstrained {
+                            panic!("Unconstrained block is already active.");
+                        }
+                        self.unconstrained = true;
+                        self.unconstrained_state = ForkState {
+                            global_clk: self.global_clk,
+                            clk: self.clk,
+                            pc: self.pc,
+                            memory_diff: HashMap::default(),
+                            memory_access: std::mem::take(&mut self.memory_access),
+                            segment: std::mem::take(&mut self.segment),
+                            record: std::mem::take(&mut self.record),
+                        };
+                        a = 1;
+                    }
+                    Syscall::EXIT_UNCONSTRAINED => {
+                        a = 0;
+                        // Reset the state of the runtime.
+                        if self.unconstrained {
+                            self.global_clk = self.unconstrained_state.global_clk;
+                            self.clk = self.unconstrained_state.clk;
+                            self.pc = self.unconstrained_state.pc;
+                            next_pc = self.pc.wrapping_add(4);
+                            for (addr, value) in self.unconstrained_state.memory_diff.drain() {
+                                match value {
+                                    Some(value) => {
+                                        self.memory.insert(addr, value);
+                                    }
+                                    None => {
+                                        self.memory.remove(&addr);
+                                    }
+                                }
+                            }
+                            self.segment = std::mem::take(&mut self.unconstrained_state.segment);
+                            self.memory_access =
+                                std::mem::take(&mut self.unconstrained_state.memory_access);
+                            self.record = std::mem::take(&mut self.unconstrained_state.record);
+                            self.unconstrained = false;
+                        }
+                        self.unconstrained_state = ForkState::default();
+                    }
                 }
 
                 // We have to do this AFTER the precompile execution because the CPU event
@@ -976,13 +1046,13 @@ impl Runtime {
             );
         }
 
-        let func_counts = p3_baby_bear::FUNC_COUNTS.lock().unwrap();
-        let mut pairs: Vec<(_, _)> = func_counts.clone().into_iter().collect();
-        pairs.sort_by(|a, b| b.1.cmp(&a.1));
-        for (fn_name, count) in pairs {
-            log::info!("{}: {}", fn_name, count);
-        }
-        drop(func_counts);
+        // let func_counts = p3_baby_bear::FUNC_COUNTS.lock().unwrap();
+        // let mut pairs: Vec<(_, _)> = func_counts.clone().into_iter().collect();
+        // pairs.sort_by(|a, b| b.1.cmp(&a.1));
+        // for (fn_name, count) in pairs {
+        //     log::info!("{}: {}", fn_name, count);
+        // }
+        // drop(func_counts);
     }
 
     fn postprocess(&mut self) {

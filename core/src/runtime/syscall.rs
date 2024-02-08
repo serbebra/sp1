@@ -32,6 +32,12 @@ pub enum Syscall {
     /// Executes the `K256_DECOMPRESS` precompile.
     SECP256K1_DECOMPRESS = 109,
 
+    /// Enter unconstrained block.
+    ENTER_UNCONSTRAINED = 110,
+
+    /// Exit unconstrained block.
+    EXIT_UNCONSTRAINED = 111,
+
     WRITE = 999,
 }
 
