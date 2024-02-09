@@ -68,12 +68,12 @@ pub fn hint<T: Serialize>(value: &T) {
 
 pub fn hint_slice(buf: &[u8]) {
     println!("hint_slice byte len: {:?}", buf.len());
-    let mut writer = SyscallWriter { fd: FD_IO };
+    let mut writer = SyscallWriter { fd: FD_HINT };
     writer.write_all(buf).unwrap();
 }
 
 pub fn read_hint_slice(buf: &mut [u8]) {
     println!("read_hint_slice byte len: {:?}", buf.len());
-    let mut my_reader = SyscallReader { fd: FD_IO };
+    let mut my_reader = SyscallReader { fd: FD_HINT };
     my_reader.read_exact(buf).unwrap();
 }
