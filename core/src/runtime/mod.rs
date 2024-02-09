@@ -27,6 +27,7 @@ pub use opcode::*;
 pub use program::*;
 pub use register::*;
 pub use segment::*;
+use std::collections::hash_map::Entry;
 use std::collections::HashMap;
 use std::fs::File;
 use std::io::BufWriter;
@@ -256,11 +257,23 @@ impl Runtime {
     }
 
     pub fn mw_core(&mut self, addr: u32, value: u32, segment: u32, clk: u32) -> MemoryWriteRecord {
-        let prev_value = *self.memory.entry(addr).or_insert(0);
+        let memory_value_entry = self.memory.entry(addr);
         let (prev_segment, prev_timestamp) =
             self.memory_access.get(&addr).cloned().unwrap_or((0, 0));
+        if self.unconstrained {
+            let prev_value = match memory_value_entry {
+                Entry::Occupied(ref entry) => Some(*entry.get()),
+                Entry::Vacant(_) => None,
+            };
+            self.unconstrained_state
+                .memory_diff
+                .entry(addr)
+                .or_insert(prev_value);
+        }
+        let memory_value = memory_value_entry.or_insert(0);
+        let prev_value = *memory_value;
         self.memory_access.insert(addr, (segment, clk));
-        self.memory.insert(addr, value);
+        *memory_value = value;
         MemoryWriteRecord::new(
             value,
             segment,
@@ -281,12 +294,15 @@ impl Runtime {
             self.clk_from_position(&position),
         );
 
-        match position {
-            AccessPosition::A => self.record.a = Some(record.into()),
-            AccessPosition::B => self.record.b = Some(record.into()),
-            AccessPosition::C => self.record.c = Some(record.into()),
-            AccessPosition::Memory => self.record.memory = Some(record.into()),
+        if !self.unconstrained {
+            match position {
+                AccessPosition::A => self.record.a = Some(record.into()),
+                AccessPosition::B => self.record.b = Some(record.into()),
+                AccessPosition::C => self.record.c = Some(record.into()),
+                AccessPosition::Memory => self.record.memory = Some(record.into()),
+            }
         }
+
         record.value
     }
 
@@ -302,22 +318,24 @@ impl Runtime {
         );
 
         // Set the records.
-        match position {
-            AccessPosition::A => {
-                assert!(self.record.a.is_none());
-                self.record.a = Some(record.into());
-            }
-            AccessPosition::B => {
-                assert!(self.record.b.is_none());
-                self.record.b = Some(record.into());
-            }
-            AccessPosition::C => {
-                assert!(self.record.c.is_none());
-                self.record.c = Some(record.into());
-            }
-            AccessPosition::Memory => {
-                assert!(self.record.memory.is_none());
-                self.record.memory = Some(record.into());
+        if !self.unconstrained {
+            match position {
+                AccessPosition::A => {
+                    assert!(self.record.a.is_none());
+                    self.record.a = Some(record.into());
+                }
+                AccessPosition::B => {
+                    assert!(self.record.b.is_none());
+                    self.record.b = Some(record.into());
+                }
+                AccessPosition::C => {
+                    assert!(self.record.c.is_none());
+                    self.record.c = Some(record.into());
+                }
+                AccessPosition::Memory => {
+                    assert!(self.record.memory.is_none());
+                    self.record.memory = Some(record.into());
+                }
             }
         }
     }
@@ -1036,7 +1054,7 @@ impl Runtime {
             self.global_clk += 1;
             self.clk += 4;
 
-            if self.clk % self.segment_size == 1 {
+            if self.clk % self.segment_size == 1 && !self.unconstrained {
                 let segment = std::mem::take(&mut self.segment);
                 self.segments.push(segment);
                 // Set up new segment
