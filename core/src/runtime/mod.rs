@@ -781,12 +781,13 @@ impl Runtime {
                                 log::info!("stderr: {}", s.trim_end());
                             } else if fd == 3 {
                                 self.output_stream.extend_from_slice(slice);
-                            } else if fd == 4 {
-                                self.input_stream.extend_from_slice(slice);
                             } else {
                                 unreachable!()
                             }
+                        } else if fd == 4 {
+                            self.input_stream.extend_from_slice(slice);
                         }
+
                         a = 0;
                     }
                     Syscall::ED_ADD => {
