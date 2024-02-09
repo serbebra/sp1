@@ -730,7 +730,7 @@ impl Runtime {
                     }
                     Syscall::WRITE => {
                         let fd = self.register(a0);
-                        if fd == 1 || fd == 2 || fd == 3 {
+                        if fd == 1 || fd == 2 || fd == 3 || fd == 4 {
                             let write_buf = self.register(a1);
                             let nbytes = self.register(a2);
                             // Read nbytes from memory starting at write_buf.
@@ -781,13 +781,12 @@ impl Runtime {
                                 log::info!("stderr: {}", s.trim_end());
                             } else if fd == 3 {
                                 self.output_stream.extend_from_slice(slice);
+                            } else if fd == 4 {
+                                self.input_stream.extend_from_slice(slice);
                             } else {
                                 unreachable!()
                             }
-                        } else if fd == 4 {
-                            self.input_stream.extend_from_slice(slice);
                         }
-
                         a = 0;
                     }
                     Syscall::ED_ADD => {
