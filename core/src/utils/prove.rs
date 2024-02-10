@@ -86,12 +86,21 @@ pub fn prove_core(runtime: &mut Runtime) -> crate::stark::Proof<BabyBearBlake3> 
         );
     });
 
+    let start = Instant::now();
     // Verify the proof.
     let mut challenger = config.challenger();
     runtime.verify(&config, &mut challenger, &proof).unwrap();
+    let verify_time = start.elapsed();
+    println!("verify_time: {:?}", verify_time);
 
     proof
 }
+
+// pub fn verify(runtime: &mut Runtime, proof: &crate::stark::Proof<BabyBearBlake3>) {
+//     // Verify the proof.
+//     let mut challenger = config.challenger();
+//     runtime.verify(&config, &mut challenger, proof).unwrap();
+// }
 
 pub fn uni_stark_prove<SC, A>(
     config: &SC,
