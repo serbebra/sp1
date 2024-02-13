@@ -40,7 +40,7 @@ use serde::Serialize;
 use stark::{OpeningProof, ProgramVerificationError, Proof, ShardMainData};
 use stark::{RiscvStark, StarkGenericConfig};
 use std::fs;
-use utils::{prove_core, BabyBearBlake3, StarkUtils};
+use utils::{prove_core, BabyBearBlake3, BabyBearKeccak, StarkUtils};
 
 /// A prover that can prove RISCV ELFs.
 pub struct CurtaProver;

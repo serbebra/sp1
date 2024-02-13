@@ -120,7 +120,8 @@ where
             .collect::<Vec<_>>();
 
         // Commit to the batch of traces.
-        let (main_commit, main_data) = config.pcs().commit_batches(traces.to_vec());
+        let (main_commit, main_data) = tracing::info_span!("commit batches")
+            .in_scope(|| config.pcs().commit_batches(traces.to_vec()));
 
         // Get the filtered chip ids.
         let chip_ids = filtered_chips

@@ -12,8 +12,8 @@ use tracing_subscriber::{EnvFilter, Registry};
 pub fn setup_tracer() {
     let tracer_config = env::var("RUST_TRACER").unwrap_or_else(|_| "none".to_string());
     let mut env_filter = EnvFilter::builder()
-        .with_default_directive(LevelFilter::OFF.into())
-        .with_default_directive("log::=off".parse().unwrap())
+        .with_default_directive(LevelFilter::DEBUG.into())
+        // .with_default_directive("log::=off".parse().unwrap())
         .from_env_lossy();
     if tracer_config == "info" {
         env_filter = env_filter.add_directive("curta_core=info".parse().unwrap());

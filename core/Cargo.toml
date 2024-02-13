@@ -23,7 +23,7 @@ p3-keccak-air = { workspace = true }
 p3-mds = { workspace = true }
 p3-merkle-tree = { workspace = true }
 p3-poseidon2 = { workspace = true }
-p3-blake3 = { workspace = true }
+p3-blake3 = { workspace = true, features = ["neon"] }
 p3-symmetric = { workspace = true }
 p3-uni-stark = { workspace = true }
 p3-maybe-rayon = { workspace = true }
@@ -58,7 +58,6 @@ criterion = "0.5.1"
 num = { version = "0.4.1", features = ["rand"] }
 rand = "0.8.5"
 
-
 [features]
 perf = ["parallel"]
 parallel = ["p3-maybe-rayon/parallel", "p3-blake3/parallel"]
@@ -66,7 +65,7 @@ default = ["perf"]
 debug = ["parallel"]
 debug-proof = ["parallel", "perf"]
 serial = []
-neon = ["p3-blake3/neon"]
+neon = []
 
 [[bench]]
 name = "main"

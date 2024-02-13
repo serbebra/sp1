@@ -116,8 +116,7 @@ pub fn generate_permutation_trace<F: PrimeField, EF: ExtensionField<F>>(
 
     // The permutation trace is actually the multiplicative inverse of the RLC's we computed above.
     permutation_trace_values
-        .chunks_mut(chunk_rate)
-        .par_bridge()
+        .par_chunks_mut(chunk_rate)
         .for_each(|chunk| batch_multiplicative_inverse_inplace(chunk));
     let mut permutation_trace =
         RowMajorMatrix::new(permutation_trace_values, permutation_trace_width);
