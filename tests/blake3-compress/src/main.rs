@@ -34,6 +34,12 @@ pub fn main() {
         43, 250,
     ];
 
+    for i in 0..64 {
+        println!("Comparing {} and {}", input_state[i], output_state[i]);
+        if input_state[i] != output_state[i] {
+            panic!("mismatch at index {}", i);
+        }
+    }
     assert_eq!(input_state, output_state);
 
     println!("done");
