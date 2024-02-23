@@ -40,6 +40,8 @@ pub enum ProveCliCommands {
 }
 
 fn main() -> Result<()> {
+    let target = target_lexicon::HOST.to_string();
+    println!("target: {}", target);
     let Cargo::Prove(args) = Cargo::parse();
     let command = args.command.unwrap_or(ProveCliCommands::Prove(args.prove));
     match command {
