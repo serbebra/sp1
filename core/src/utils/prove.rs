@@ -140,6 +140,7 @@ pub(super) mod baby_bear_poseidon2 {
     use p3_poseidon2::{DiffusionMatrixBabybear, Poseidon2};
     use p3_symmetric::{PaddingFreeSponge, TruncatedPermutation};
     use rand::Rng;
+    use serde::{Deserialize, Serialize};
 
     use crate::stark::StarkConfig;
 
@@ -165,6 +166,7 @@ pub(super) mod baby_bear_poseidon2 {
     type Pcs =
         TwoAdicFriPcs<TwoAdicFriPcsConfig<Val, Challenge, Challenger, Dft, ValMmcs, ChallengeMmcs>>;
 
+    #[derive(Serialize, Deserialize)]
     pub struct BabyBearPoseidon2 {
         perm: Perm,
         pcs: Pcs,

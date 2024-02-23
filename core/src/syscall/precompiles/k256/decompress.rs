@@ -392,7 +392,10 @@ pub mod tests {
             runtime.read_stdout_slice(&mut result);
 
             assert_eq!(result, decompressed);
-            prove_core(&mut runtime)
+            let proof = prove_core(&mut runtime);
+
+            let mut buf = Vec::new();
+            bincode::serialize_into(&mut buf, &proof).expect("serialization failed");
         }
     }
 }
