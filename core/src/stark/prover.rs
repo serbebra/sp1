@@ -432,14 +432,15 @@ where
                         let data = tracing::info_span!("shard commit main", shard = shard.index)
                             .in_scope(|| Self::commit_main(config, machine, shard, i));
                         let commitment = data.main_commit.clone();
-                        let file = tempfile::tempfile().unwrap();
-                        let data = if num_shards > save_disk_threshold {
-                            tracing::info_span!("saving trace to disk").in_scope(|| {
-                                data.save(file).expect("failed to save shard main data")
-                            })
-                        } else {
-                            data.to_in_memory()
-                        };
+                        // let file = tempfile::tempfile().unwrap();
+                        // let data = if num_shards > save_disk_threshold {
+                        //     tracing::info_span!("saving trace to disk").in_scope(|| {
+                        //         data.save(file).expect("failed to save shard main data")
+                        //     })
+                        // } else {
+                        //     data.to_in_memory()
+                        // };
+                        let data = data.to_in_memory();
                         (commitment, data)
                     })
                     .collect::<Vec<_>>()
