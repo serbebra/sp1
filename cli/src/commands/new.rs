@@ -9,6 +9,19 @@ const SCRIPT_CARGO_TOML: &str = include_str!("../assets/script/Cargo.toml");
 const SCRIPT_MAIN_RS: &str = include_str!("../assets/script/main.rs");
 const SCRIPT_RUST_TOOLCHAIN: &str = include_str!("../assets/script/rust-toolchain");
 const GIT_IGNORE: &str = include_str!("../assets/.gitignore");
+const SUCCINCT_JSON_TEMPLATE: &str = r#"
+{
+    "entrypoints": [
+        {
+            "name": "{{name}}",
+            "framework": "sp1",
+            "baseDir": ".",
+            "buildCommand": "cargo prove build --evm",
+            "proveCommand": "cargo prove"
+        }
+    ]
+}
+"#;
 
 #[derive(Parser)]
 #[command(name = "new", about = "Setup a new project that runs inside the SP1.")]
@@ -35,7 +48,7 @@ impl NewCmd {
         )?;
         fs::write(program_root.join("src").join("main.rs"), PROGRAM_MAIN_RS)?;
 
-        // Create the runner directory.
+        // Create the script directory.
         fs::create_dir(&script_root)?;
         fs::create_dir(script_root.join("src"))?;
         fs::write(
@@ -47,6 +60,10 @@ impl NewCmd {
 
         // Add .gitignore file to root.
         fs::write(root.join(".gitignore"), GIT_IGNORE)?;
+
+        // Write the succinct.json file.
+        let succinct_json_content = SUCCINCT_JSON_TEMPLATE.replace("{{name}}", &self.name);
+        fs::write(root.join("succinct.json"), succinct_json_content)?;
 
         println!(
             "    \x1b[1m{}\x1b[0m {} ({})",
