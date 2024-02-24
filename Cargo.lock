@@ -274,9 +274,9 @@ checksum = "37b2a672a2cb129a2e41c10b1224bb368f9f37a2b16b612598138befd7b37eb5"
 
 [[package]]
 name = "cc"
-version = "1.0.86"
+version = "1.0.87"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7f9fa1897e4325be0d68d48df6aa1a71ac2ed4d27723887e7754192705350730"
+checksum = "3286b845d0fccbdd15af433f61c5970e711987036cb468f437ff6badd70f4e24"
 dependencies = [
  "libc",
 ]
@@ -1433,7 +1433,7 @@ checksum = "b15813163c1d831bf4a13c3610c05c0d03b39feb07f7e09fa234dac9b15aaf39"
 [[package]]
 name = "p3-air"
 version = "0.1.0"
-source = "git+https://github.com/succinctlabs/plonky3.git?branch=kevjue/fri_fold_precompile#389f3c98c7501d75fcc340ee1cab4f379c1b9c64"
+source = "git+https://github.com/succinctlabs/plonky3.git?branch=kevjue/merke_hash_and_precompile#0f6fba2d0dae7721fa02a2c58611a68eb204759a"
 dependencies = [
  "p3-field",
  "p3-matrix",
@@ -1442,7 +1442,7 @@ dependencies = [
 [[package]]
 name = "p3-baby-bear"
 version = "0.1.0"
-source = "git+https://github.com/succinctlabs/plonky3.git?branch=kevjue/fri_fold_precompile#389f3c98c7501d75fcc340ee1cab4f379c1b9c64"
+source = "git+https://github.com/succinctlabs/plonky3.git?branch=kevjue/merke_hash_and_precompile#0f6fba2d0dae7721fa02a2c58611a68eb204759a"
 dependencies = [
  "p3-field",
  "rand",
@@ -1452,7 +1452,7 @@ dependencies = [
 [[package]]
 name = "p3-blake3"
 version = "0.1.0"
-source = "git+https://github.com/succinctlabs/plonky3.git?branch=kevjue/fri_fold_precompile#389f3c98c7501d75fcc340ee1cab4f379c1b9c64"
+source = "git+https://github.com/succinctlabs/plonky3.git?branch=kevjue/merke_hash_and_precompile#0f6fba2d0dae7721fa02a2c58611a68eb204759a"
 dependencies = [
  "blake3",
  "p3-symmetric",
@@ -1461,18 +1461,19 @@ dependencies = [
 [[package]]
 name = "p3-challenger"
 version = "0.1.0"
-source = "git+https://github.com/succinctlabs/plonky3.git?branch=kevjue/fri_fold_precompile#389f3c98c7501d75fcc340ee1cab4f379c1b9c64"
+source = "git+https://github.com/succinctlabs/plonky3.git?branch=kevjue/merke_hash_and_precompile#0f6fba2d0dae7721fa02a2c58611a68eb204759a"
 dependencies = [
  "p3-field",
  "p3-maybe-rayon",
  "p3-symmetric",
+ "p3-util",
  "tracing",
 ]
 
 [[package]]
 name = "p3-commit"
 version = "0.1.0"
-source = "git+https://github.com/succinctlabs/plonky3.git?branch=kevjue/fri_fold_precompile#389f3c98c7501d75fcc340ee1cab4f379c1b9c64"
+source = "git+https://github.com/succinctlabs/plonky3.git?branch=kevjue/merke_hash_and_precompile#0f6fba2d0dae7721fa02a2c58611a68eb204759a"
 dependencies = [
  "p3-challenger",
  "p3-field",
@@ -1483,7 +1484,7 @@ dependencies = [
 [[package]]
 name = "p3-dft"
 version = "0.1.0"
-source = "git+https://github.com/succinctlabs/plonky3.git?branch=kevjue/fri_fold_precompile#389f3c98c7501d75fcc340ee1cab4f379c1b9c64"
+source = "git+https://github.com/succinctlabs/plonky3.git?branch=kevjue/merke_hash_and_precompile#0f6fba2d0dae7721fa02a2c58611a68eb204759a"
 dependencies = [
  "p3-field",
  "p3-matrix",
@@ -1494,7 +1495,7 @@ dependencies = [
 [[package]]
 name = "p3-field"
 version = "0.1.0"
-source = "git+https://github.com/succinctlabs/plonky3.git?branch=kevjue/fri_fold_precompile#389f3c98c7501d75fcc340ee1cab4f379c1b9c64"
+source = "git+https://github.com/succinctlabs/plonky3.git?branch=kevjue/merke_hash_and_precompile#0f6fba2d0dae7721fa02a2c58611a68eb204759a"
 dependencies = [
  "itertools 0.12.1",
  "p3-util",
@@ -1505,7 +1506,7 @@ dependencies = [
 [[package]]
 name = "p3-fri"
 version = "0.1.0"
-source = "git+https://github.com/succinctlabs/plonky3.git?branch=kevjue/fri_fold_precompile#389f3c98c7501d75fcc340ee1cab4f379c1b9c64"
+source = "git+https://github.com/succinctlabs/plonky3.git?branch=kevjue/merke_hash_and_precompile#0f6fba2d0dae7721fa02a2c58611a68eb204759a"
 dependencies = [
  "cfg-if",
  "itertools 0.12.1",
@@ -1525,7 +1526,7 @@ dependencies = [
 [[package]]
 name = "p3-goldilocks"
 version = "0.1.0"
-source = "git+https://github.com/succinctlabs/plonky3.git?branch=kevjue/fri_fold_precompile#389f3c98c7501d75fcc340ee1cab4f379c1b9c64"
+source = "git+https://github.com/succinctlabs/plonky3.git?branch=kevjue/merke_hash_and_precompile#0f6fba2d0dae7721fa02a2c58611a68eb204759a"
 dependencies = [
  "p3-field",
  "p3-util",
@@ -1536,7 +1537,7 @@ dependencies = [
 [[package]]
 name = "p3-interpolation"
 version = "0.1.0"
-source = "git+https://github.com/succinctlabs/plonky3.git?branch=kevjue/fri_fold_precompile#389f3c98c7501d75fcc340ee1cab4f379c1b9c64"
+source = "git+https://github.com/succinctlabs/plonky3.git?branch=kevjue/merke_hash_and_precompile#0f6fba2d0dae7721fa02a2c58611a68eb204759a"
 dependencies = [
  "p3-field",
  "p3-matrix",
@@ -1546,7 +1547,7 @@ dependencies = [
 [[package]]
 name = "p3-keccak"
 version = "0.1.0"
-source = "git+https://github.com/succinctlabs/plonky3.git?branch=kevjue/fri_fold_precompile#389f3c98c7501d75fcc340ee1cab4f379c1b9c64"
+source = "git+https://github.com/succinctlabs/plonky3.git?branch=kevjue/merke_hash_and_precompile#0f6fba2d0dae7721fa02a2c58611a68eb204759a"
 dependencies = [
  "p3-symmetric",
  "tiny-keccak",
@@ -1555,7 +1556,7 @@ dependencies = [
 [[package]]
 name = "p3-keccak-air"
 version = "0.1.0"
-source = "git+https://github.com/succinctlabs/plonky3.git?branch=kevjue/fri_fold_precompile#389f3c98c7501d75fcc340ee1cab4f379c1b9c64"
+source = "git+https://github.com/succinctlabs/plonky3.git?branch=kevjue/merke_hash_and_precompile#0f6fba2d0dae7721fa02a2c58611a68eb204759a"
 dependencies = [
  "p3-air",
  "p3-field",
@@ -1567,7 +1568,7 @@ dependencies = [
 [[package]]
 name = "p3-matrix"
 version = "0.1.0"
-source = "git+https://github.com/succinctlabs/plonky3.git?branch=kevjue/fri_fold_precompile#389f3c98c7501d75fcc340ee1cab4f379c1b9c64"
+source = "git+https://github.com/succinctlabs/plonky3.git?branch=kevjue/merke_hash_and_precompile#0f6fba2d0dae7721fa02a2c58611a68eb204759a"
 dependencies = [
  "p3-field",
  "p3-maybe-rayon",
@@ -1579,7 +1580,7 @@ dependencies = [
 [[package]]
 name = "p3-maybe-rayon"
 version = "0.1.0"
-source = "git+https://github.com/succinctlabs/plonky3.git?branch=kevjue/fri_fold_precompile#389f3c98c7501d75fcc340ee1cab4f379c1b9c64"
+source = "git+https://github.com/succinctlabs/plonky3.git?branch=kevjue/merke_hash_and_precompile#0f6fba2d0dae7721fa02a2c58611a68eb204759a"
 dependencies = [
  "rayon",
 ]
@@ -1587,7 +1588,7 @@ dependencies = [
 [[package]]
 name = "p3-mds"
 version = "0.1.0"
-source = "git+https://github.com/succinctlabs/plonky3.git?branch=kevjue/fri_fold_precompile#389f3c98c7501d75fcc340ee1cab4f379c1b9c64"
+source = "git+https://github.com/succinctlabs/plonky3.git?branch=kevjue/merke_hash_and_precompile#0f6fba2d0dae7721fa02a2c58611a68eb204759a"
 dependencies = [
  "p3-baby-bear",
  "p3-dft",
@@ -1603,7 +1604,7 @@ dependencies = [
 [[package]]
 name = "p3-merkle-tree"
 version = "0.1.0"
-source = "git+https://github.com/succinctlabs/plonky3.git?branch=kevjue/fri_fold_precompile#389f3c98c7501d75fcc340ee1cab4f379c1b9c64"
+source = "git+https://github.com/succinctlabs/plonky3.git?branch=kevjue/merke_hash_and_precompile#0f6fba2d0dae7721fa02a2c58611a68eb204759a"
 dependencies = [
  "itertools 0.12.1",
  "p3-commit",
@@ -1619,7 +1620,7 @@ dependencies = [
 [[package]]
 name = "p3-mersenne-31"
 version = "0.1.0"
-source = "git+https://github.com/succinctlabs/plonky3.git?branch=kevjue/fri_fold_precompile#389f3c98c7501d75fcc340ee1cab4f379c1b9c64"
+source = "git+https://github.com/succinctlabs/plonky3.git?branch=kevjue/merke_hash_and_precompile#0f6fba2d0dae7721fa02a2c58611a68eb204759a"
 dependencies = [
  "itertools 0.12.1",
  "p3-dft",
@@ -1634,7 +1635,7 @@ dependencies = [
 [[package]]
 name = "p3-poseidon2"
 version = "0.1.0"
-source = "git+https://github.com/succinctlabs/plonky3.git?branch=kevjue/fri_fold_precompile#389f3c98c7501d75fcc340ee1cab4f379c1b9c64"
+source = "git+https://github.com/succinctlabs/plonky3.git?branch=kevjue/merke_hash_and_precompile#0f6fba2d0dae7721fa02a2c58611a68eb204759a"
 dependencies = [
  "p3-baby-bear",
  "p3-field",
@@ -1648,16 +1649,17 @@ dependencies = [
 [[package]]
 name = "p3-symmetric"
 version = "0.1.0"
-source = "git+https://github.com/succinctlabs/plonky3.git?branch=kevjue/fri_fold_precompile#389f3c98c7501d75fcc340ee1cab4f379c1b9c64"
+source = "git+https://github.com/succinctlabs/plonky3.git?branch=kevjue/merke_hash_and_precompile#0f6fba2d0dae7721fa02a2c58611a68eb204759a"
 dependencies = [
  "itertools 0.12.1",
  "p3-field",
+ "serde",
 ]
 
 [[package]]
 name = "p3-uni-stark"
 version = "0.1.0"
-source = "git+https://github.com/succinctlabs/plonky3.git?branch=kevjue/fri_fold_precompile#389f3c98c7501d75fcc340ee1cab4f379c1b9c64"
+source = "git+https://github.com/succinctlabs/plonky3.git?branch=kevjue/merke_hash_and_precompile#0f6fba2d0dae7721fa02a2c58611a68eb204759a"
 dependencies = [
  "itertools 0.12.1",
  "p3-air",
@@ -1675,7 +1677,7 @@ dependencies = [
 [[package]]
 name = "p3-util"
 version = "0.1.0"
-source = "git+https://github.com/succinctlabs/plonky3.git?branch=kevjue/fri_fold_precompile#389f3c98c7501d75fcc340ee1cab4f379c1b9c64"
+source = "git+https://github.com/succinctlabs/plonky3.git?branch=kevjue/merke_hash_and_precompile#0f6fba2d0dae7721fa02a2c58611a68eb204759a"
 dependencies = [
  "serde",
 ]
@@ -2389,7 +2391,7 @@ dependencies = [
 [[package]]
 name = "sp1-precompiles"
 version = "0.1.0"
-source = "git+https://github.com/succinctlabs/sp1.git?branch=kevjue/recursive_verifier_take_two#60c89f33da4059d6d8d31ee7005f4593a5d361d8"
+source = "git+https://github.com/succinctlabs/sp1.git?branch=kevjue/recursive_verifier_take_two#5ea8c46254578c5e75f0570e08d90e4e200dba85"
 dependencies = [
  "anyhow",
  "bincode",
@@ -2418,7 +2420,7 @@ dependencies = [
 [[package]]
 name = "sp1-zkvm"
 version = "0.1.0"
-source = "git+https://github.com/succinctlabs/sp1.git?branch=kevjue/recursive_verifier_take_two#60c89f33da4059d6d8d31ee7005f4593a5d361d8"
+source = "git+https://github.com/succinctlabs/sp1.git?branch=kevjue/recursive_verifier_take_two#5ea8c46254578c5e75f0570e08d90e4e200dba85"
 dependencies = [
  "anyhow",
  "bincode",
