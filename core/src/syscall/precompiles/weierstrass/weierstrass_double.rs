@@ -163,7 +163,7 @@ impl<F: PrimeField32, E: EllipticCurve + WeierstrassParameters> MachineAir<F>
         "WeierstrassDoubleAssign".to_string()
     }
 
-    #[instrument(name = "generate weierstrass double trace", skip_all)]
+    #[instrument(name = "generate WeierstrassDoubleAssign trace", skip_all)]
     fn generate_trace(
         &self,
         input: &ExecutionRecord,
