@@ -30,6 +30,7 @@ use p3_matrix::MatrixRowSlices;
 use sp1_derive::AlignedBorrow;
 use std::fmt::Debug;
 use std::marker::PhantomData;
+use tracing::instrument;
 
 pub const NUM_WEIERSTRASS_DOUBLE_COLS: usize = size_of::<WeierstrassDoubleAssignCols<u8>>();
 
@@ -162,6 +163,7 @@ impl<F: PrimeField32, E: EllipticCurve + WeierstrassParameters> MachineAir<F>
         "WeierstrassDoubleAssign".to_string()
     }
 
+    #[instrument(name = "generate WeierstrassDouble trace", skip_all)]
     fn generate_trace(
         &self,
         input: &ExecutionRecord,
