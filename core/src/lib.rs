@@ -46,6 +46,7 @@ use std::process::exit;
 use utils::{prove_core, BabyBearBlake3, StarkUtils};
 
 use crate::runtime::AsyncEventRecorder;
+use crate::utils::prove_shards;
 
 /// A prover that can prove RISCV ELFs.
 pub struct SP1Prover;
@@ -90,21 +91,20 @@ impl SP1Prover {
         let machine = RiscvStark::new(config.clone());
         let mut receiver = AsyncEventRecorder::new(100000000, machine);
         let program = Program::from(elf);
-        let mut runtime = Runtime::new(program, &mut receiver);
+        let mut runtime = Runtime::new(program.clone(), &mut receiver);
         runtime.write_stdin_slice(&stdin.buffer.data);
         tracing::info_span!("runtime.run(...)").in_scope(|| {
             runtime.run();
         });
         let start_time = std::time::Instant::now();
+        let stdout = SP1Stdout::from(&runtime.state.output_stream);
         let shards = receiver.close();
         println!("time: {:?}", start_time.elapsed());
         println!("shards: {:?}", shards.len());
         println!("shard[0] stats: {:?}", shards[0].stats());
         // println!("stats: {:?}", record.stats());
-        exit(0);
         let config = BabyBearBlake3::new();
-        let stdout = SP1Stdout::from(&runtime.state.output_stream);
-        let proof = prove_core(config, ExecutionRecord::default());
+        let proof = prove_shards(config, &program, shards);
         Ok(SP1ProofWithIO {
             proof,
             stdin,
