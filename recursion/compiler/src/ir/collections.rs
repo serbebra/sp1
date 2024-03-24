@@ -86,7 +86,6 @@ impl<C: Config> Builder<C> {
         index: I,
     ) -> V {
         let index = index.into();
-
         match slice {
             Array::Fixed(slice) => {
                 if let Usize::Const(idx) = index {
@@ -96,6 +95,8 @@ impl<C: Config> Builder<C> {
                 }
             }
             Array::Dyn(ptr, _) => {
+                let code = self.eval(C::N::from_canonical_usize(152));
+                self.print_v(code);
                 let var: V = self.uninit();
                 self.load(var.clone(), *ptr + index * V::size_of());
                 var

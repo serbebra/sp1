@@ -181,12 +181,27 @@ fn test_fri_verify_shape_and_sample_challenges() {
     // set commit phase commits
     for i in 0..proof.commit_phase_commits.len() {
         let mut commitment: Commitment<C> = builder.dyn_array(DIGEST_SIZE);
+        match commitment {
+            Array::Dyn(commitment, _) => {
+                builder.print_v(commitment.address);
+            }
+            _ => unimplemented!(),
+        };
         let h: [F; DIGEST_SIZE] = proof.commit_phase_commits[i].into();
         #[allow(clippy::needless_range_loop)]
         for j in 0..DIGEST_SIZE {
             builder.set(&mut commitment, j, h[j]);
         }
-        builder.set(&mut proofvar.commit_phase_commits, i, commitment);
+        builder.set(&mut proofvar.commit_phase_commits, i, commitment.clone());
+        let comm2 = builder.get(&mut proofvar.commit_phase_commits, i);
+        match (commitment, comm2) {
+            (Array::Dyn(commitment, _), Array::Dyn(comm2, _)) => {
+                builder.print_v(commitment.address);
+                builder.print_v(comm2.address);
+                builder.assert_var_eq(commitment.address, comm2.address);
+            }
+            _ => unimplemented!(),
+        };
     }
 
     // set query proofs

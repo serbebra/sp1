@@ -32,9 +32,22 @@ pub fn verify_shape_and_sample_challenges<C: Config>(
     let end = proof.commit_phase_commits.len().materialize(builder);
     let ctr: Var<_> = builder.eval(C::N::zero());
     builder.range(0, end).for_each(|i, builder| {
-        // builder.print_v(ctr);
-        // builder.print_v(i);
+        builder.print_v(ctr);
+        builder.print_v(i);
+        match proof.commit_phase_commits {
+            Array::Dyn(commit_phase_commits, _) => {
+                builder.print_v(commit_phase_commits.address);
+            }
+            _ => unimplemented!(),
+        }
+        builder.print_v(i);
         let comm = builder.get(&proof.commit_phase_commits, ctr);
+        match comm {
+            Array::Dyn(commit_phase_commits, _) => {
+                builder.print_v(commit_phase_commits.address);
+            }
+            _ => unimplemented!(),
+        }
         challenger.observe_commitment(builder, comm);
         let sample = challenger.sample_ext(builder);
         builder.set(&mut betas, ctr, sample);
