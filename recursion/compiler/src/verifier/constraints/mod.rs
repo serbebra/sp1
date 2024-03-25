@@ -16,7 +16,7 @@ use crate::prelude::{Builder, Ext, SymbolicExt};
 pub use domain::*;
 pub use opening::*;
 
-use super::folder::RecursiveVerifierConstraintFolder;
+// use super::folder::RecursiveVerifierConstraintFolder;
 
 // pub struct TwoAdicCose
 

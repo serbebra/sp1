@@ -3,7 +3,7 @@ use p3_commit::LagrangeSelectors;
 use sp1_recursion_compiler::verifier::TwoAdicMultiplicativeCosetVariable;
 
 use p3_field::{AbstractField, TwoAdicField};
-use sp1_recursion_compiler::ir::{Builder, Config, Ext, Felt, SymbolicFelt, Usize, Var};
+use sp1_recursion_compiler::ir::{Builder, Config, Ext, Felt, Usize, Var};
 
 use crate::commit::PolynomialSpaceVariable;
 
@@ -101,7 +101,7 @@ where
         // We can compute a generator for the domain by computing g_dom^{log_num_chunks}
         let g = builder.exp_power_of_2_v::<Felt<C::F>>(g_dom, log_num_chunks.into());
 
-        let domain_power: Felt<_> = builder.eval(g_dom);
+        let domain_power: Felt<_> = builder.eval(C::F::one());
         let mut domains = vec![];
 
         for _ in 0..num_chunks {
@@ -114,14 +114,6 @@ where
             });
             builder.assign(domain_power, domain_power * g_dom);
         }
-        // (0..num_chunks)
-        //     .map(|i| TwoAdicMultiplicativeCosetVariable {
-        //         log_n,
-        //         size,
-        //         shift: builder.eval(self.shift * domain_power(i)),
-        //         g,
-        //     })
-        //     .collect()
         domains
     }
 }
@@ -146,6 +138,11 @@ mod tests {
         domain_val: &TwoAdicMultiplicativeCoset<F>,
         zeta_val: C::EF,
     ) {
+        // Assert the domain parameters are the same.
+        builder.assert_var_eq(domain.log_n, F::from_canonical_usize(domain_val.log_n));
+        builder.assert_var_eq(domain.size, F::from_canonical_usize(1 << domain_val.log_n));
+        // builder.assert_felt_eq(domain.shift, domain_val.shift);
+        builder.assert_felt_eq(domain.gen(), domain_val.gen());
         // Get a random point.
         let zeta: Ext<_, _> = builder.eval(zeta_val.cons());
 
@@ -210,22 +207,8 @@ mod tests {
 
             // Test the splitting of domains by the builder.
             let qc_domains = disjoint_domain.split_domains(&mut builder, log_quotient_degree);
-            for i in 0..(1 << log_quotient_degree) {
-                println!("Domain power {i}: {}", disjoint_domain_val.gen().exp_u64(i));
-            }
             for (dom, dom_val) in qc_domains.iter().zip_eq(qc_domains_val.iter()) {
-                // Assert that the gen are the same
-                let g_value = dom_val.gen();
-                let g = dom.gen();
-                builder.assert_felt_eq(g, g_value);
-                builder.assert_var_eq(dom.log_n, F::from_canonical_usize(dom_val.log_n));
-                let size_val = 1 << dom_val.log_n;
-                builder.assert_var_eq(dom.size, F::from_canonical_usize(size_val));
-                // assert the shift is the same
-                // builder.assert_felt_eq(dom.shift, dom_val.shift);
-                // builder.print_f(dom.shift);
-                // println!("Shift: {}", dom_val.shift);
-                // domain_assertions(&mut builder, dom, dom_val, zeta_val);
+                domain_assertions(&mut builder, dom, dom_val, zeta_val);
             }
         }
 
