@@ -28,7 +28,7 @@ pub struct TwoAdicPcsProofVariable<C: Config> {
 }
 
 #[derive(DslVariable, Clone)]
-pub struct TwoAdicPcsRoundVariable<C: Config> {
+pub struct RoundVariable<C: Config> {
     pub batch_commit: Commitment<C>,
     pub mats: Array<C, TwoAdicPcsMatsVariable<C>>,
 }
@@ -46,7 +46,7 @@ pub struct TwoAdicPcsMatsVariable<C: Config> {
 pub fn verify_two_adic_pcs<C: Config>(
     builder: &mut Builder<C>,
     config: &FriConfigVariable<C>,
-    rounds: Array<C, TwoAdicPcsRoundVariable<C>>,
+    rounds: Array<C, RoundVariable<C>>,
     proof: TwoAdicPcsProofVariable<C>,
     challenger: &mut DuplexChallengerVariable<C>,
 ) where

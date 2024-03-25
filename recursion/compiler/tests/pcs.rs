@@ -32,8 +32,8 @@ use sp1_recursion_compiler::ir::SymbolicExt;
 use sp1_recursion_compiler::ir::SymbolicFelt;
 use sp1_recursion_compiler::verifier::challenger::DuplexChallengerVariable;
 use sp1_recursion_compiler::verifier::fri;
+use sp1_recursion_compiler::verifier::fri::pcs::RoundVariable;
 use sp1_recursion_compiler::verifier::fri::pcs::TwoAdicPcsMatsVariable;
-use sp1_recursion_compiler::verifier::fri::pcs::TwoAdicPcsRoundVariable;
 use sp1_recursion_compiler::verifier::fri::types::Commitment;
 use sp1_recursion_compiler::verifier::fri::types::FriCommitPhaseProofStepVariable;
 use sp1_recursion_compiler::verifier::fri::types::FriConfigVariable;
@@ -177,7 +177,7 @@ fn const_two_adic_pcs_rounds(
     )>,
 ) -> (
     Array<RecursionConfig, Felt<Val>>,
-    Array<RecursionConfig, TwoAdicPcsRoundVariable<RecursionConfig>>,
+    Array<RecursionConfig, RoundVariable<RecursionConfig>>,
 ) {
     let mut commit_var: Array<_, Felt<_>> = builder.dyn_array(DIGEST_SIZE);
     for i in 0..DIGEST_SIZE {
@@ -212,8 +212,8 @@ fn const_two_adic_pcs_rounds(
         builder.set(&mut mats, m, mat);
     }
 
-    let mut rounds_var: Array<_, TwoAdicPcsRoundVariable<_>> = builder.dyn_array(1);
-    let round_var = TwoAdicPcsRoundVariable {
+    let mut rounds_var: Array<_, RoundVariable<_>> = builder.dyn_array(1);
+    let round_var = RoundVariable {
         batch_commit: commit_var.clone(),
         mats,
     };
