@@ -1,10 +1,8 @@
-use itertools::rev;
 use p3_field::AbstractField;
 use p3_field::TwoAdicField;
 use sp1_recursion_derive::DslVariable;
 
 use super::types::Dimensions;
-use super::types::DIGEST_SIZE;
 use super::types::{Commitment, FriConfigVariable, FriProofVariable};
 use crate::prelude::Felt;
 use crate::prelude::MemVariable;
@@ -16,29 +14,29 @@ use crate::prelude::{Array, Builder, Config, Ext, Usize};
 use crate::verifier::fri;
 use crate::verifier::fri::verify_shape_and_sample_challenges;
 use crate::verifier::fri::DuplexChallengerVariable;
-use crate::verifier::TwoAdicMultiplicativeCoset;
+use crate::verifier::TwoAdicMultiplicativeCosetVariable;
 
 #[derive(DslVariable, Clone)]
-pub struct BatchOpening<C: Config> {
+pub struct BatchOpeningVariable<C: Config> {
     pub opened_values: Array<C, Array<C, Ext<C::F, C::EF>>>,
     pub opening_proof: Array<C, Array<C, Felt<C::F>>>,
 }
 
-pub struct TwoAdicPcsProof<C: Config> {
+pub struct TwoAdicPcsProofVariable<C: Config> {
     pub fri_proof: FriProofVariable<C>,
-    pub query_openings: Array<C, Array<C, BatchOpening<C>>>,
+    pub query_openings: Array<C, Array<C, BatchOpeningVariable<C>>>,
 }
 
 #[derive(DslVariable, Clone)]
-pub struct TwoAdicPcsRound<C: Config> {
+pub struct TwoAdicPcsRoundVariable<C: Config> {
     pub batch_commit: Commitment<C>,
-    pub mats: Array<C, TwoAdicPcsMats<C>>,
+    pub mats: Array<C, TwoAdicPcsMatsVariable<C>>,
 }
 
 #[allow(clippy::type_complexity)]
 #[derive(DslVariable, Clone)]
-pub struct TwoAdicPcsMats<C: Config> {
-    pub domain: TwoAdicMultiplicativeCoset<C>,
+pub struct TwoAdicPcsMatsVariable<C: Config> {
+    pub domain: TwoAdicMultiplicativeCosetVariable<C>,
     pub points: Array<C, Ext<C::F, C::EF>>,
     pub values: Array<C, Array<C, Ext<C::F, C::EF>>>,
 }
@@ -48,20 +46,26 @@ pub struct TwoAdicPcsMats<C: Config> {
 pub fn verify_two_adic_pcs<C: Config>(
     builder: &mut Builder<C>,
     config: &FriConfigVariable<C>,
-    rounds: Array<C, TwoAdicPcsRound<C>>,
-    proof: TwoAdicPcsProof<C>,
+    rounds: Array<C, TwoAdicPcsRoundVariable<C>>,
+    proof: TwoAdicPcsProofVariable<C>,
     challenger: &mut DuplexChallengerVariable<C>,
 ) where
     C::EF: TwoAdicField,
 {
     let alpha = challenger.sample_ext(builder);
 
+    let code = builder.eval(C::N::from_canonical_usize(1));
+    builder.print_v(code);
     let fri_challenges =
         verify_shape_and_sample_challenges(builder, config, &proof.fri_proof, challenger);
+    let code = builder.eval(C::N::from_canonical_usize(1));
+    builder.print_v(code);
 
     let commit_phase_commits_len = builder.materialize(proof.fri_proof.commit_phase_commits.len());
     let log_max_height: Var<_> = builder.eval(commit_phase_commits_len + config.log_blowup);
 
+    let code = builder.eval(C::N::from_canonical_usize(2));
+    builder.print_v(code);
     let mut reduced_openings: Array<C, Array<C, Ext<C::F, C::EF>>> =
         builder.array(proof.query_openings.len());
     builder
@@ -92,20 +96,18 @@ pub fn verify_two_adic_pcs<C: Config>(
                     let dim = Dimensions::<C> {
                         height: mat.domain.size(),
                     };
-                    // builder.print_v(mat.domain.size());
                     builder.set(&mut batch_dims, k, dim);
                 });
 
                 let index_bits = builder.num2bits_v(index);
 
-                fri::verify_batch(
+                fri::verify_batch::<C, 1>(
                     builder,
                     &batch_commit,
                     batch_dims,
                     index_bits,
                     batch_opening.opened_values.clone(),
                     &batch_opening.opening_proof,
-                    1,
                 );
 
                 builder
@@ -137,18 +139,15 @@ pub fn verify_two_adic_pcs<C: Config>(
                             let z: Ext<C::F, C::EF> = builder.get(&mat_points, l);
                             let ps_at_z = builder.get(&mat_values, l);
                             builder.range(0, ps_at_z.len()).for_each(|m, builder| {
-                                let p_at_x = builder.get(&mat_opening, m);
-                                let p_at_z = builder.get(&ps_at_z, m);
-                                // builder.print_e(p_at_x);
-                                // builder.print_e(p_at_z);
-                                let p_at_x: SymbolicExt<C::F, C::EF> = p_at_x.into();
-                                let p_at_z: SymbolicExt<C::F, C::EF> = p_at_z.into();
+                                let p_at_x: SymbolicExt<C::F, C::EF> =
+                                    builder.get(&mat_opening, m).into();
+                                let p_at_z: SymbolicExt<C::F, C::EF> =
+                                    builder.get(&ps_at_z, m).into();
                                 let quotient: SymbolicExt<C::F, C::EF> =
                                     (-p_at_z + p_at_x) / (-z + x);
 
                                 let ro_at_log_height = builder.get(&ro, log_height);
                                 let alpha_pow_at_log_height = builder.get(&alpha_pow, log_height);
-                                // builder.print_e(alpha_pow_at_log_height);
                                 let new_ro_at_log_height: Ext<C::F, C::EF> = builder
                                     .eval(ro_at_log_height + alpha_pow_at_log_height * quotient);
 
@@ -162,13 +161,13 @@ pub fn verify_two_adic_pcs<C: Config>(
                         });
                     });
             });
-            builder.range(0, ro.len()).for_each(|x, builder| {
-                let el = builder.get(&ro, x);
-                builder.print_e(el);
-            });
             builder.set(&mut reduced_openings, i, ro);
         });
+    let code = builder.eval(C::N::from_canonical_usize(2));
+    builder.print_v(code);
 
+    let code = builder.eval(C::N::from_canonical_usize(3));
+    builder.print_v(code);
     fri::verify_challenges(
         builder,
         config,
@@ -176,4 +175,6 @@ pub fn verify_two_adic_pcs<C: Config>(
         &fri_challenges,
         &reduced_openings,
     );
+    let code = builder.eval(C::N::from_canonical_usize(3));
+    builder.print_v(code);
 }
