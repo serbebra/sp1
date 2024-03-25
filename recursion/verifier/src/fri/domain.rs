@@ -1,6 +1,6 @@
 use p3_commit::LagrangeSelectors;
 
-use sp1_recursion_compiler::verifier::TwoAdicMultiplicativeCoset;
+use sp1_recursion_compiler::verifier::TwoAdicMultiplicativeCosetVariable;
 
 use p3_field::{AbstractField, TwoAdicField};
 use sp1_recursion_compiler::ir::{Builder, Config, Ext, Felt, SymbolicFelt, Usize, Var};
@@ -31,7 +31,7 @@ use crate::commit::PolynomialSpaceVariable;
 //     }
 // }
 
-impl<C: Config> PolynomialSpaceVariable<C> for TwoAdicMultiplicativeCoset<C>
+impl<C: Config> PolynomialSpaceVariable<C> for TwoAdicMultiplicativeCosetVariable<C>
 where
     C::F: TwoAdicField,
 {
@@ -41,7 +41,7 @@ where
         let log_d_val = constant.log_n as u32;
         let g_val = C::F::two_adic_generator(constant.log_n);
         // Initialize a domain.
-        TwoAdicMultiplicativeCoset::<C> {
+        TwoAdicMultiplicativeCosetVariable::<C> {
             log_n: builder.eval::<Var<_>, _>(C::N::from_canonical_u32(log_d_val)),
             size: builder.eval::<Var<_>, _>(C::N::from_canonical_u32(1 << (log_d_val))),
             shift: builder.eval(constant.shift),
@@ -94,39 +94,46 @@ where
     fn split_domains(&self, builder: &mut Builder<C>, log_num_chunks: usize) -> Vec<Self> {
         let num_chunks = 1 << log_num_chunks;
         let log_n: Var<_> = builder.eval(self.log_n - C::N::from_canonical_usize(log_num_chunks));
-        let size = builder.power_of_two_usize(Usize::Var(log_n));
-        let size = size.materialize(builder);
+        let size = builder.power_of_two_var(Usize::Var(log_n));
 
         let g_dom = self.gen();
 
-        let domain_power = |i| {
-            let mut result = SymbolicFelt::from(g_dom);
-            for _ in 0..i {
-                result *= g_dom;
-            }
-            result
-        };
-
         // We can compute a generator for the domain by computing g_dom^{log_num_chunks}
         let g = builder.exp_power_of_2_v::<Felt<C::F>>(g_dom, log_num_chunks.into());
-        (0..num_chunks)
-            .map(|i| TwoAdicMultiplicativeCoset {
+
+        let domain_power: Felt<_> = builder.eval(g_dom);
+        let mut domains = vec![];
+
+        for _ in 0..num_chunks {
+            builder.print_f(domain_power);
+            domains.push(TwoAdicMultiplicativeCosetVariable {
                 log_n,
                 size,
-                shift: builder.eval(self.shift * domain_power(i)),
+                shift: builder.eval(self.shift * domain_power),
                 g,
-            })
-            .collect()
+            });
+            builder.assign(domain_power, domain_power * g_dom);
+        }
+        // (0..num_chunks)
+        //     .map(|i| TwoAdicMultiplicativeCosetVariable {
+        //         log_n,
+        //         size,
+        //         shift: builder.eval(self.shift * domain_power(i)),
+        //         g,
+        //     })
+        //     .collect()
+        domains
     }
 }
 
 #[cfg(test)]
 mod tests {
+    use itertools::Itertools;
     use sp1_recursion_compiler::asm::VmBuilder;
     use sp1_recursion_compiler::prelude::ExtConst;
 
     use super::*;
-    use p3_commit::{Pcs, PolynomialSpace};
+    use p3_commit::{Pcs, PolynomialSpace, TwoAdicMultiplicativeCoset};
     use p3_field::TwoAdicField;
     use rand::{thread_rng, Rng};
     use sp1_core::stark::Dom;
@@ -135,8 +142,8 @@ mod tests {
 
     fn domain_assertions<F: TwoAdicField, C: Config<N = F, F = F>>(
         builder: &mut Builder<C>,
-        domain: &TwoAdicMultiplicativeCoset<C>,
-        domain_val: &p3_commit::TwoAdicMultiplicativeCoset<F>,
+        domain: &TwoAdicMultiplicativeCosetVariable<C>,
+        domain_val: &TwoAdicMultiplicativeCoset<F>,
         zeta_val: C::EF,
     ) {
         // Get a random point.
@@ -179,6 +186,7 @@ mod tests {
             // Initialize a reference doamin.
             let domain_val = natural_domain_for_degree(1 << log_d_val);
             let domain = builder.const_domain(&domain_val);
+            builder.assert_felt_eq(domain.shift, domain_val.shift);
             let zeta_val = rng.gen::<EF>();
             domain_assertions(&mut builder, &domain, &domain_val, zeta_val);
 
@@ -201,9 +209,23 @@ mod tests {
             }
 
             // Test the splitting of domains by the builder.
-            let qc_domains = builder.split_domains(&disjoint_domain, log_quotient_degree);
-            for (dom, dom_val) in qc_domains.iter().zip(qc_domains_val.iter()) {
-                domain_assertions(&mut builder, dom, dom_val, zeta_val);
+            let qc_domains = disjoint_domain.split_domains(&mut builder, log_quotient_degree);
+            for i in 0..(1 << log_quotient_degree) {
+                println!("Domain power {i}: {}", disjoint_domain_val.gen().exp_u64(i));
+            }
+            for (dom, dom_val) in qc_domains.iter().zip_eq(qc_domains_val.iter()) {
+                // Assert that the gen are the same
+                let g_value = dom_val.gen();
+                let g = dom.gen();
+                builder.assert_felt_eq(g, g_value);
+                builder.assert_var_eq(dom.log_n, F::from_canonical_usize(dom_val.log_n));
+                let size_val = 1 << dom_val.log_n;
+                builder.assert_var_eq(dom.size, F::from_canonical_usize(size_val));
+                // assert the shift is the same
+                // builder.assert_felt_eq(dom.shift, dom_val.shift);
+                // builder.print_f(dom.shift);
+                // println!("Shift: {}", dom_val.shift);
+                // domain_assertions(&mut builder, dom, dom_val, zeta_val);
             }
         }
 

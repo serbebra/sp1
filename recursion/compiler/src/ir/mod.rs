@@ -17,7 +17,7 @@ pub use symbolic::*;
 pub use types::*;
 pub use var::*;
 
-pub trait Config: Clone {
+pub trait Config: 'static + Clone {
     type N: Field;
     type F: Field;
     type EF: ExtensionField<Self::F>;

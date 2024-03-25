@@ -7,18 +7,17 @@ use sp1_recursion_compiler::{
 
 use crate::types::ShardProofVariable;
 
-pub struct StarkVerifier<'a, C: Config, SC: StarkGenericConfig> {
-    builder: &'a mut Builder<C>,
-    _phantom: std::marker::PhantomData<SC>,
+#[derive(Debug, Clone, Copy)]
+pub struct StarkVerifier<C: Config, SC: StarkGenericConfig> {
+    _phantom: std::marker::PhantomData<(C, SC)>,
 }
 
-impl<'a, C: Config, SC: StarkGenericConfig> StarkVerifier<'a, C, SC>
+impl<C: Config, SC: StarkGenericConfig> StarkVerifier<C, SC>
 where
     SC: StarkGenericConfig<Val = C::F, Challenge = C::EF>,
 {
-    pub fn new(builder: &'a mut Builder<C>) -> Self {
+    pub fn new() -> Self {
         Self {
-            builder,
             _phantom: std::marker::PhantomData,
         }
     }
