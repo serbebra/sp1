@@ -85,7 +85,6 @@ mod tests {
     use p3_field::AbstractField;
     use p3_field::Field;
     use p3_field::PrimeField32;
-    use p3_field::TwoAdicField;
     use p3_fri::FriConfig;
     use p3_fri::FriProof;
     use p3_fri::TwoAdicFriPcs;

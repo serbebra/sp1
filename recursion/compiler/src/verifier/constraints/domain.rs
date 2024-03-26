@@ -1,10 +1,9 @@
 use crate::prelude::*;
-use p3_commit::LagrangeSelectors;
 use sp1_recursion_derive::DslVariable;
 
 use crate::{
     ir::{Config, Felt, Usize},
-    prelude::{Builder, Ext, SymbolicFelt, Var},
+    prelude::{Builder, Var},
 };
 use p3_field::{AbstractField, TwoAdicField};
 
