@@ -1,5 +1,7 @@
 use itertools::Itertools;
 use p3_matrix::Dimensions;
+use serde::Deserialize;
+use serde::Serialize;
 use std::cmp::Reverse;
 use std::collections::HashMap;
 
@@ -52,6 +54,9 @@ impl<SC: StarkGenericConfig, A> MachineStark<SC, A> {
     }
 }
 
+#[derive(Serialize, Deserialize)]
+#[serde(bound(serialize = "PcsProverData<SC>: Serialize"))]
+#[serde(bound(deserialize = "PcsProverData<SC>: Deserialize<'de>"))]
 pub struct ProvingKey<SC: StarkGenericConfig> {
     pub commit: Com<SC>,
     pub traces: Vec<RowMajorMatrix<Val<SC>>>,
