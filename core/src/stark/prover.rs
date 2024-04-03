@@ -79,8 +79,13 @@ where
     {
         // Observe the preprocessed commitment.
         challenger.observe(pk.commit.clone());
+        let start = Instant::now();
         // Generate and commit the traces for each segment.
         let (shard_commits, shard_data) = Self::commit_shards(machine, &shards);
+        log::info!(
+            "commit to all shards for getting global challenges took: {:.2} secs",
+            start.elapsed().as_secs_f64()
+        );
 
         // Observe the challenges for each segment.
         tracing::debug_span!("observing all challenges").in_scope(|| {
@@ -129,6 +134,7 @@ where
                                 data.materialize()
                                     .expect("failed to materialize shard main data")
                             };
+                            let commit_timing = start.elapsed().as_secs_f64();
                             let ordering = data.chip_ordering.clone();
                             let chips = machine.shard_chips_ordered(&ordering).collect::<Vec<_>>();
                             let proof = Self::prove_shard(
@@ -140,11 +146,12 @@ where
                             );
                             finished.fetch_add(1, Ordering::Relaxed);
                             log::info!(
-                                "> open shards ({}/{}): shard = {}, time = {:.2} secs",
+                                "> open shards ({}/{}): shard = {}, time = {:.2} secs (commit timing = {:.2} secs)",
                                 finished.load(Ordering::Relaxed),
                                 total,
                                 idx,
-                                start.elapsed().as_secs_f64()
+                                start.elapsed().as_secs_f64(),
+                                commit_timing
                             );
                             proof
                         })

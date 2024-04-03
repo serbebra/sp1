@@ -211,8 +211,8 @@ impl<SC: StarkGenericConfig, A: MachineAir<Val<SC>>> MachineStark<SC, A> {
             + for<'a> Air<VerifierConstraintFolder<'a, SC>>
             + for<'a> Air<DebugConstraintBuilder<'a, Val<SC>, SC::Challenge>>,
     {
-        tracing::debug!("sharding the execution record");
-        let shards = self.shard(record, &<A::Record as MachineRecord>::Config::default());
+        let shards = tracing::debug_span!("sharding the execution record")
+            .in_scope(|| self.shard(record, &<A::Record as MachineRecord>::Config::default()));
 
         tracing::debug!("generating the shard proofs");
         P::prove_shards(self, pk, shards, challenger)
@@ -534,7 +534,7 @@ pub mod tests {
 
     #[test]
     fn test_fibonacci_prove() {
-        setup_logger();
+        utils::setup_logger();
         let program = fibonacci_program();
         run_test(program).unwrap();
     }
