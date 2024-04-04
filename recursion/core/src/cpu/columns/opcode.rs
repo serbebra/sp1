@@ -48,6 +48,9 @@ pub struct OpcodeSelectorCols<T> {
     pub is_jal: T,
     pub is_jalr: T,
 
+    pub is_hintbits: T,
+    pub is_poseidon: T,
+
     // System instructions.
     pub is_trap: T,
     pub is_noop: T,
@@ -86,9 +89,11 @@ impl<F: Field> OpcodeSelectorCols<F> {
             Opcode::JAL => self.is_jal = F::one(),
             Opcode::JALR => self.is_jalr = F::one(),
             Opcode::TRAP => self.is_trap = F::one(),
+            Opcode::HintBits => self.is_hintbits = F::one(),
+            Opcode::Poseidon2Perm => self.is_poseidon = F::one(),
             Opcode::PrintF => self.is_noop = F::one(),
             Opcode::PrintE => self.is_noop = F::one(),
-            _ => unimplemented!("opcode {:?} not supported", instruction.opcode),
+            Opcode::Ext2Felt => self.is_noop = F::one(),
         }
     }
 }
@@ -124,6 +129,8 @@ impl<T: Copy> IntoIterator for &OpcodeSelectorCols<T> {
             self.is_ebne,
             self.is_jal,
             self.is_jalr,
+            self.is_hintbits,
+            self.is_poseidon,
             self.is_trap,
             self.is_noop,
         ]

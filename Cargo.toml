@@ -9,8 +9,9 @@ members = [
     "recursion/compiler",
     "recursion/circuit",
     "recursion/program",
+    "recursion/wrapper",
     "sdk",
-    "zkvm/*",
+    "zkvm/*", 
 ]
 exclude = ["examples/target"]
 resolver = "2"

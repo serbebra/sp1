@@ -3563,6 +3563,26 @@ dependencies = [
 ]
 
 [[package]]
+name = "sp1-recursion-wrapper"
+version = "0.1.0"
+dependencies = [
+ "p3-baby-bear",
+ "p3-challenger",
+ "p3-commit",
+ "p3-dft",
+ "p3-field",
+ "p3-fri",
+ "p3-merkle-tree",
+ "p3-poseidon2",
+ "p3-symmetric",
+ "sp1-core",
+ "sp1-recursion-compiler",
+ "sp1-recursion-core",
+ "sp1-recursion-program",
+ "sp1-sdk",
+]
+
+[[package]]
 name = "sp1-sdk"
 version = "0.1.0"
 dependencies = [
