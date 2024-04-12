@@ -30,9 +30,29 @@ pub fn verify_two_adic_pcs<C: Config>(
     C::F: TwoAdicField,
     C::EF: TwoAdicField,
 {
+    let input: FriFoldInput<C> = builder.uninit();
+    let mut input_ptr = builder.array::<FriFoldInput<_>>(1);
+    let input_ptr_raw = match input_ptr {
+        Array::Dyn(ptr, _) => ptr,
+        _ => unreachable!(),
+    };
+
+    builder.set_value(&mut input_ptr, 0, input);
+
+    let g = builder.generator();
     let log_blowup = C::N::from_canonical_usize(config.log_blowup);
     let blowup = C::N::from_canonical_usize(1 << config.log_blowup);
     let alpha = challenger.sample_ext(builder);
+
+    builder.store(
+        input_ptr_raw,
+        MemIndex {
+            index: Usize::Const(1),
+            offset: 0,
+            size: 1,
+        },
+        alpha,
+    );
 
     let fri_challenges =
         verify_shape_and_sample_challenges(builder, config, &proof.fri_proof, challenger);
@@ -47,6 +67,9 @@ pub fn verify_two_adic_pcs<C: Config>(
     let mut reduced_openings: Array<C, Array<C, Ext<C::F, C::EF>>> =
         builder.array(proof.query_openings.len());
 
+    let zero_ef = builder.eval(C::EF::zero().cons());
+    let one_ef = builder.eval(C::EF::one().cons());
+
     builder
         .range(0, proof.query_openings.len())
         .for_each(|i, builder| {
@@ -55,14 +78,31 @@ pub fn verify_two_adic_pcs<C: Config>(
 
             let mut ro: Array<C, Ext<C::F, C::EF>> = builder.array(32);
             let mut alpha_pow: Array<C, Ext<C::F, C::EF>> = builder.array(32);
-            let zero_ef = builder.eval(C::EF::zero().cons());
             for j in 0..32 {
                 builder.set_value(&mut ro, j, zero_ef);
             }
-            let one_ef = builder.eval(C::EF::one().cons());
             for j in 0..32 {
                 builder.set_value(&mut alpha_pow, j, one_ef);
             }
+
+            builder.store(
+                input_ptr_raw,
+                MemIndex {
+                    index: Usize::Const(0),
+                    offset: 8,
+                    size: 2,
+                },
+                alpha_pow.clone(),
+            );
+            builder.store(
+                input_ptr_raw,
+                MemIndex {
+                    index: Usize::Const(0),
+                    offset: 10,
+                    size: 2,
+                },
+                ro.clone(),
+            );
 
             builder.range(0, rounds.len()).for_each(|j, builder| {
                 let batch_opening = builder.get(&query_opening, j);
@@ -70,12 +110,9 @@ pub fn verify_two_adic_pcs<C: Config>(
                 let batch_commit = round.batch_commit;
                 let mats = round.mats;
 
-                let mut batch_heights_log2: Array<C, Var<C::N>> = builder.array(mats.len());
-                builder.range(0, mats.len()).for_each(|k, builder| {
-                    let mat = builder.get(&mats, k);
-                    let height_log2: Var<_> = builder.eval(mat.domain.log_n + log_blowup);
-                    builder.set_value(&mut batch_heights_log2, k, height_log2);
-                });
+                let mat = builder.get(&mats, 0);
+                let log_batch_max_height: Var<_> = builder.eval(mat.domain.log_n + log_blowup);
+
                 let mut batch_dims: Array<C, DimensionsVariable<C>> = builder.array(mats.len());
                 builder.range(0, mats.len()).for_each(|k, builder| {
                     let mat = builder.get(&mats, k);
@@ -85,7 +122,6 @@ pub fn verify_two_adic_pcs<C: Config>(
                     builder.set_value(&mut batch_dims, k, dim);
                 });
 
-                let log_batch_max_height = builder.get(&batch_heights_log2, 0);
                 let bits_reduced: Var<_> =
                     builder.eval(log_global_max_height - log_batch_max_height);
                 let index_bits_shifted_v1 = index_bits.shift(builder, bits_reduced);
@@ -113,7 +149,6 @@ pub fn verify_two_adic_pcs<C: Config>(
                             builder.eval(log_global_max_height - log_height);
                         let index_bits_shifted = index_bits.shift(builder, bits_reduced);
 
-                        let g = builder.generator();
                         let two_adic_generator = config.get_two_adic_generator(builder, log_height);
                         let two_adic_generator_exp = builder.exp_reverse_bits_len(
                             two_adic_generator,
@@ -122,23 +157,56 @@ pub fn verify_two_adic_pcs<C: Config>(
                         );
                         let x: Felt<C::F> = builder.eval(two_adic_generator_exp * g);
 
+                        builder.store(
+                            input_ptr_raw,
+                            MemIndex {
+                                index: Usize::Const(0),
+                                offset: 2,
+                                size: 1,
+                            },
+                            x,
+                        );
+                        builder.store(
+                            input_ptr_raw,
+                            MemIndex {
+                                index: Usize::Const(0),
+                                offset: 3,
+                                size: 1,
+                            },
+                            log_height,
+                        );
+                        builder.store(
+                            input_ptr_raw,
+                            MemIndex {
+                                index: Usize::Const(0),
+                                offset: 4,
+                                size: 2,
+                            },
+                            mat_opening,
+                        );
+
                         builder.range(0, mat_points.len()).for_each(|l, builder| {
                             let z: Ext<C::F, C::EF> = builder.get(&mat_points, l);
                             let ps_at_z = builder.get(&mat_values, l);
 
-                            let input = FriFoldInput {
+                            builder.store(
+                                input_ptr_raw,
+                                MemIndex {
+                                    index: Usize::Const(0),
+                                    offset: 0,
+                                    size: 1,
+                                },
                                 z,
-                                alpha,
-                                x,
-                                log_height,
-                                mat_opening: mat_opening.clone(),
-                                ps_at_z: ps_at_z.clone(),
-                                alpha_pow: alpha_pow.clone(),
-                                ro: ro.clone(),
-                            };
-
-                            let mut input_ptr = builder.array::<FriFoldInput<_>>(1);
-                            builder.set_value(&mut input_ptr, 0, input);
+                            );
+                            builder.store(
+                                input_ptr_raw,
+                                MemIndex {
+                                    index: Usize::Const(0),
+                                    offset: 6,
+                                    size: 2,
+                                },
+                                ps_at_z.clone(),
+                            );
 
                             builder.range(0, ps_at_z.len()).for_each(|m, builder| {
                                 builder.push(DslIr::FriFold(m, input_ptr.clone()));

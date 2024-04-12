@@ -123,6 +123,10 @@ pub fn build_reduce(setup: bool) -> RecursionProgram<Val> {
     let recursion_vk: VerifyingKeyVariable<_> = builder.uninit();
     let proofs: Array<_, ShardProofVariable<_>> = builder.uninit();
 
+    if !setup {
+        builder.vregs = 1024;
+    }
+
     // 2) Witness the inputs.
     if setup {
         Vec::<usize>::witness(&is_recursive_flags, &mut builder);
@@ -147,7 +151,6 @@ pub fn build_reduce(setup: bool) -> RecursionProgram<Val> {
         return builder.compile_program();
     }
 
-    builder.print_debug(99999);
     let num_proofs = is_recursive_flags.len();
     let _pre_reconstruct_challenger = clone(&mut builder, &reconstruct_challenger);
     let zero: Var<_> = builder.constant(F::zero());

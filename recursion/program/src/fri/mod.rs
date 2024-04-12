@@ -312,9 +312,9 @@ pub fn reduce_fast<C: Config, const D: usize>(
                     opened_values.clone(),
                 );
                 builder.assign(nb_opened_values, nb_opened_values + C::N::one());
-                builder.assign(dim_idx, dim_idx + C::N::one());
             });
         });
+    builder.assign(dim_idx, dim_idx + nb_opened_values);
 
     if D == 1 {
         let nested_opened_values = match nested_opened_values {
