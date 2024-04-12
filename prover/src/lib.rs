@@ -260,6 +260,9 @@ impl SP1ProverImpl {
 mod tests {
 
     use super::*;
+    use rayon::iter::{
+        IndexedParallelIterator, IntoParallelIterator, IntoParallelRefIterator, ParallelIterator,
+    };
     use sp1_core::utils::setup_logger;
 
     #[test]
@@ -315,63 +318,103 @@ mod tests {
         // layer = 1;
 
         let start = Instant::now();
-        let final_proof: ShardProof<OuterSC> = {
-            let mut final_proof = None;
+        let final_proof = {
             while reduce_proofs.len() > 1 {
                 println!("layer = {}", layer);
                 // Write layer to {i}.bin with bincode
                 let serialized = bincode::serialize(&reduce_proofs).unwrap();
                 std::fs::write(format!("{}.bin", layer), serialized).unwrap();
-                let mut next_proofs = Vec::new();
-                for i in (0..reduce_proofs.len()).step_by(n) {
-                    let end = std::cmp::min(i + n, reduce_proofs.len());
-                    println!("i = {}, end = {}", i, end);
-                    if i == end - 1 {
-                        next_proofs.push(reduce_proofs.pop().unwrap());
-                        continue;
-                    }
-                    let proofs = &reduce_proofs[i..end];
-                    for proof in proofs.iter() {
-                        match proof {
-                            ReduceProof::SP1(proof) => {
-                                println!("public values = {:?}", proof.public_values);
-                            }
-                            ReduceProof::Recursive(proof) => {
-                                println!("recursive public values = {:?}", proof.public_values);
-                            }
-                            _ => unreachable!(),
-                        }
-                    }
-                    if reduce_proofs.len() <= n {
-                        println!("last proof");
-                        let proof: ShardProof<OuterSC> =
-                            prover.reduce(&vk, sp1_challenger.clone(), proofs);
-                        final_proof = Some(proof);
-                        reduce_proofs.clear();
-                        break;
-                    }
-                    let proof: ShardProof<InnerSC> =
-                        prover.reduce(&vk, sp1_challenger.clone(), proofs);
 
-                    let recursion_machine = RecursionAir::machine(InnerSC::default());
-                    let mut challenger = recursion_machine.config().challenger();
-                    let mut full_proof = Proof::<InnerSC> {
-                        shard_proofs: vec![proof],
-                    };
-                    let res =
-                        recursion_machine.verify(&prover.reduce_vk, &full_proof, &mut challenger);
-                    if res.is_err() {
-                        println!("Failed to verify proof");
-                        println!("err = {:?}", res.err());
-                    }
-                    let proof = full_proof.shard_proofs.pop().unwrap();
-                    next_proofs.push(ReduceProof::Recursive(proof));
-                }
+                let next_proofs = reduce_proofs
+                    .into_par_iter()
+                    .chunks(n)
+                    .map(|chunk| {
+                        let proofs = chunk.as_slice();
+                        for proof in proofs.iter() {
+                            match proof {
+                                ReduceProof::SP1(proof) => {
+                                    println!("public values = {:?}", proof.public_values);
+                                }
+                                ReduceProof::Recursive(proof) => {
+                                    println!("recursive public values = {:?}", proof.public_values);
+                                }
+                                _ => unreachable!(),
+                            }
+                        }
+
+                        let proof: ShardProof<InnerSC> =
+                            prover.reduce(&vk, sp1_challenger.clone(), proofs);
+
+                        let recursion_machine = RecursionAir::machine(InnerSC::default());
+                        let mut challenger = recursion_machine.config().challenger();
+                        let mut full_proof = Proof::<InnerSC> {
+                            shard_proofs: vec![proof],
+                        };
+                        let res = recursion_machine.verify(
+                            &prover.reduce_vk,
+                            &full_proof,
+                            &mut challenger,
+                        );
+                        if res.is_err() {
+                            println!("Failed to verify proof");
+                            println!("err = {:?}", res.err());
+                        }
+                        let proof = full_proof.shard_proofs.pop().unwrap();
+                        ReduceProof::Recursive(proof)
+                    })
+                    .collect::<Vec<_>>();
+
+                // for i in (0..reduce_proofs.len()).step_by(n) {
+                //     let end = std::cmp::min(i + n, reduce_proofs.len());
+                //     println!("i = {}, end = {}", i, end);
+                //     if i == end - 1 {
+                //         next_proofs.push(reduce_proofs.pop().unwrap());
+                //         continue;
+                //     }
+                //     let proofs = &reduce_proofs[i..end];
+                //     for proof in proofs.iter() {
+                //         match proof {
+                //             ReduceProof::SP1(proof) => {
+                //                 println!("public values = {:?}", proof.public_values);
+                //             }
+                //             ReduceProof::Recursive(proof) => {
+                //                 println!("recursive public values = {:?}", proof.public_values);
+                //             }
+                //             _ => unreachable!(),
+                //         }
+                //     }
+                //     if reduce_proofs.len() <= n {
+                //         println!("last proof");
+                //         let proof: ShardProof<OuterSC> =
+                //             prover.reduce(&vk, sp1_challenger.clone(), proofs);
+                //         final_proof = Some(proof);
+                //         reduce_proofs.clear();
+                //         break;
+                //     }
+                //     let proof: ShardProof<InnerSC> =
+                //         prover.reduce(&vk, sp1_challenger.clone(), proofs);
+
+                //     let recursion_machine = RecursionAir::machine(InnerSC::default());
+                //     let mut challenger = recursion_machine.config().challenger();
+                //     let mut full_proof = Proof::<InnerSC> {
+                //         shard_proofs: vec![proof],
+                //     };
+                //     let res =
+                //         recursion_machine.verify(&prover.reduce_vk, &full_proof, &mut challenger);
+                //     if res.is_err() {
+                //         println!("Failed to verify proof");
+                //         println!("err = {:?}", res.err());
+                //     }
+                //     let proof = full_proof.shard_proofs.pop().unwrap();
+                //     next_proofs.push(ReduceProof::Recursive(proof));
+                // }
                 reduce_proofs = next_proofs;
                 layer += 1;
             }
-            final_proof.unwrap()
+
+            reduce_proofs.into_iter().next().unwrap()
         };
+
         let duration = start.elapsed().as_secs();
         println!("duration = {}", duration);
 
