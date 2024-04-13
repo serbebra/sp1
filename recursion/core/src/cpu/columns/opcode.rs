@@ -13,24 +13,7 @@ const OPCODE_COUNT: usize = core::mem::size_of::<OpcodeSelectorCols<u8>>();
 #[repr(C)]
 pub struct OpcodeSelectorCols<T> {
     // Arithmetic field instructions.
-    pub is_add: T,
-    pub is_sub: T,
-    pub is_mul: T,
-    pub is_div: T,
-
-    // Arithmetic field extension operations.
-    pub is_eadd: T,
-    pub is_esub: T,
-    pub is_emul: T,
-    pub is_ediv: T,
-
-    // Mixed arithmetic operations.
-    pub is_efadd: T,
-    pub is_efsub: T,
-    pub is_fesub: T,
-    pub is_efmul: T,
-    pub is_efdiv: T,
-    pub is_fediv: T,
+    pub is_alu: T,
 
     // Memory instructions.
     pub is_lw: T,
@@ -64,20 +47,20 @@ impl<F: Field> OpcodeSelectorCols<F> {
     /// need to set the relevant opcode column to 1.
     pub fn populate(&mut self, instruction: &Instruction<F>) {
         match instruction.opcode {
-            Opcode::ADD => self.is_add = F::one(),
-            Opcode::SUB => self.is_sub = F::one(),
-            Opcode::MUL => self.is_mul = F::one(),
-            Opcode::DIV => self.is_div = F::one(),
-            Opcode::EADD => self.is_eadd = F::one(),
-            Opcode::ESUB => self.is_esub = F::one(),
-            Opcode::EMUL => self.is_emul = F::one(),
-            Opcode::EDIV => self.is_ediv = F::one(),
-            Opcode::EFADD => self.is_efadd = F::one(),
-            Opcode::EFSUB => self.is_efsub = F::one(),
-            Opcode::FESUB => self.is_fesub = F::one(),
-            Opcode::EFMUL => self.is_efmul = F::one(),
-            Opcode::EFDIV => self.is_efdiv = F::one(),
-            Opcode::FEDIV => self.is_fediv = F::one(),
+            Opcode::ADD => self.is_alu = F::one(),
+            Opcode::SUB => self.is_alu = F::one(),
+            Opcode::MUL => self.is_alu = F::one(),
+            Opcode::DIV => self.is_alu = F::one(),
+            Opcode::EADD => self.is_alu = F::one(),
+            Opcode::ESUB => self.is_alu = F::one(),
+            Opcode::EMUL => self.is_alu = F::one(),
+            Opcode::EDIV => self.is_alu = F::one(),
+            Opcode::EFADD => self.is_alu = F::one(),
+            Opcode::EFSUB => self.is_alu = F::one(),
+            Opcode::FESUB => self.is_alu = F::one(),
+            Opcode::EFMUL => self.is_alu = F::one(),
+            Opcode::EFDIV => self.is_alu = F::one(),
+            Opcode::FEDIV => self.is_alu = F::one(),
             Opcode::LW => self.is_lw = F::one(),
             Opcode::SW => self.is_sw = F::one(),
             Opcode::LE => self.is_le = F::one(),
@@ -109,20 +92,7 @@ impl<T: Copy> IntoIterator for &OpcodeSelectorCols<T> {
 
     fn into_iter(self) -> Self::IntoIter {
         [
-            self.is_add,
-            self.is_sub,
-            self.is_mul,
-            self.is_div,
-            self.is_eadd,
-            self.is_esub,
-            self.is_emul,
-            self.is_ediv,
-            self.is_efadd,
-            self.is_efsub,
-            self.is_fesub,
-            self.is_efmul,
-            self.is_efdiv,
-            self.is_fediv,
+            self.is_alu,
             self.is_lw,
             self.is_sw,
             self.is_le,

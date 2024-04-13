@@ -1,4 +1,3 @@
-use crate::air::BinomialExtensionUtils;
 use crate::air::BlockBuilder;
 use crate::cpu::CpuChip;
 use crate::runtime::RecursionProgram;
@@ -11,7 +10,6 @@ use p3_field::PrimeField32;
 use p3_matrix::dense::RowMajorMatrix;
 use p3_matrix::Matrix;
 use sp1_core::air::AirInteraction;
-use sp1_core::air::BinomialExtension;
 use sp1_core::air::MachineAir;
 use sp1_core::lookup::InteractionKind;
 use sp1_core::stark::SP1AirBuilder;
@@ -80,23 +78,6 @@ impl<F: PrimeField32> MachineAir<F> for CpuChip<F> {
                     cols.c.populate(record);
                 } else {
                     cols.c.value = event.instruction.op_c;
-                }
-
-                let alu_cols = cols.opcode_specific.alu_mut();
-                if cols.selectors.is_add.is_one() {
-                    alu_cols.add_scratch.0[0] = cols.b.value.0[0] + cols.c.value.0[0];
-                    alu_cols.sub_scratch.0[0] = cols.b.value.0[0] - cols.c.value.0[0];
-                    alu_cols.mul_scratch.0[0] = cols.b.value.0[0] * cols.c.value.0[0];
-                } else if cols.selectors.is_eadd.is_one() || cols.selectors.is_efadd.is_one() {
-                    alu_cols.add_scratch = (BinomialExtension::from_block(cols.b.value)
-                        + BinomialExtension::from_block(cols.c.value))
-                    .as_block();
-                    alu_cols.sub_scratch = (BinomialExtension::from_block(cols.b.value)
-                        - BinomialExtension::from_block(cols.c.value))
-                    .as_block();
-                    alu_cols.mul_scratch = (BinomialExtension::from_block(cols.b.value)
-                        * BinomialExtension::from_block(cols.c.value))
-                    .as_block();
                 }
 
                 // cols.a_eq_b
@@ -182,21 +163,6 @@ where
             .when(local.instruction.imm_c)
             .assert_block_eq::<AB::Var, AB::Var>(local.c.value, local.instruction.op_c);
 
-        // Compute ALU.
-        let alu_cols = local.opcode_specific.alu();
-        builder.when(local.selectors.is_add).assert_eq(
-            local.b.value.0[0] + local.c.value.0[0],
-            alu_cols.add_scratch[0],
-        );
-        builder.when(local.selectors.is_add).assert_eq(
-            local.b.value.0[0] - local.c.value.0[0],
-            alu_cols.sub_scratch[0],
-        );
-        builder.when(local.selectors.is_add).assert_eq(
-            local.b.value.0[0] * local.c.value.0[0],
-            alu_cols.mul_scratch[0],
-        );
-
         builder.assert_eq(
             local.is_real * local.is_real * local.is_real,
             local.is_real * local.is_real * local.is_real,
@@ -269,18 +235,6 @@ where
             vec![
                 local.c.addr.into(),
                 local.c.prev_timestamp.into(),
-                local.c.prev_value.0[0].into(),
-                local.c.prev_value.0[1].into(),
-                local.c.prev_value.0[2].into(),
-                local.c.prev_value.0[3].into(),
-            ],
-            AB::Expr::one() - local.instruction.imm_c.into(),
-            InteractionKind::Memory,
-        ));
-        builder.send(AirInteraction::new(
-            vec![
-                local.c.addr.into(),
-                local.c.timestamp.into(),
                 local.c.value.0[0].into(),
                 local.c.value.0[1].into(),
                 local.c.value.0[2].into(),
@@ -295,10 +249,10 @@ where
             vec![
                 local.b.addr.into(),
                 local.b.prev_timestamp.into(),
-                local.b.prev_value.0[0].into(),
-                local.b.prev_value.0[1].into(),
-                local.b.prev_value.0[2].into(),
-                local.b.prev_value.0[3].into(),
+                local.b.value.0[0].into(),
+                local.b.value.0[1].into(),
+                local.b.value.0[2].into(),
+                local.b.value.0[3].into(),
             ],
             AB::Expr::one() - local.instruction.imm_b.into(),
             InteractionKind::Memory,

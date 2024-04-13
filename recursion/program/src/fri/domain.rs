@@ -5,8 +5,8 @@ use sp1_recursion_compiler::prelude::*;
 use super::types::FriConfigVariable;
 use crate::commit::PolynomialSpaceVariable;
 
-/// Reference: https://github.com/Plonky3/Plonky3/blob/main/commit/src/domain.rs#L55
-#[derive(DslVariable, Clone, Copy)]
+/// Reference: [p3_commit::TwoAdicMultiplicativeCoset]
+#[derive(DslVariable, Debug, Clone, Copy)]
 pub struct TwoAdicMultiplicativeCosetVariable<C: Config> {
     pub log_n: Var<C::N>,
     pub size: Var<C::N>,
@@ -15,7 +15,6 @@ pub struct TwoAdicMultiplicativeCosetVariable<C: Config> {
 }
 
 impl<C: Config> TwoAdicMultiplicativeCosetVariable<C> {
-    /// Reference: https://github.com/Plonky3/Plonky3/blob/main/commit/src/domain.rs#L74
     pub fn first_point(&self) -> Felt<C::F> {
         self.shift
     }
@@ -38,7 +37,6 @@ where
     fn constant(value: Self::Constant, builder: &mut Builder<C>) -> Self {
         let log_d_val = value.log_n as u32;
         let g_val = C::F::two_adic_generator(value.log_n);
-        // Initialize a domain.
         TwoAdicMultiplicativeCosetVariable::<C> {
             log_n: builder.eval::<Var<_>, _>(C::N::from_canonical_u32(log_d_val)),
             size: builder.eval::<Var<_>, _>(C::N::from_canonical_u32(1 << (log_d_val))),
@@ -54,7 +52,6 @@ where
 {
     type Constant = p3_commit::TwoAdicMultiplicativeCoset<C::F>;
 
-    /// Reference: https://github.com/Plonky3/Plonky3/blob/main/commit/src/domain.rs#L77
     fn next_point(
         &self,
         builder: &mut Builder<C>,
@@ -63,7 +60,6 @@ where
         builder.eval(point * self.gen())
     }
 
-    /// Reference: https://github.com/Plonky3/Plonky3/blob/main/commit/src/domain.rs#L112
     fn selectors_at_point(
         &self,
         builder: &mut Builder<C>,
@@ -83,19 +79,16 @@ where
         }
     }
 
-    /// Reference: https://github.com/Plonky3/Plonky3/blob/main/commit/src/domain.rs#L87
     fn zp_at_point(
         &self,
         builder: &mut Builder<C>,
         point: Ext<<C as Config>::F, <C as Config>::EF>,
     ) -> Ext<<C as Config>::F, <C as Config>::EF> {
-        // Compute (point * domain.shift.inverse()).exp_power_of_2(domain.log_n) - Ext::one()
         let unshifted_power = builder
             .exp_power_of_2_v::<Ext<_, _>>(point * self.shift.inverse(), Usize::Var(self.log_n));
         builder.eval(unshifted_power - C::EF::one())
     }
 
-    /// Reference: https://github.com/Plonky3/Plonky3/blob/main/commit/src/domain.rs#L91
     fn split_domains(&self, builder: &mut Builder<C>, log_num_chunks: usize) -> Vec<Self> {
         let num_chunks = 1 << log_num_chunks;
         let log_n: Var<_> = builder.eval(self.log_n - C::N::from_canonical_usize(log_num_chunks));

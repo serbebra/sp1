@@ -4,7 +4,7 @@ use crate::fri::TwoAdicMultiplicativeCosetVariable;
 
 pub type DigestVariable<C: Config> = Array<C, Felt<C::F>>;
 
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct FriConfigVariable<C: Config> {
     pub log_blowup: usize,
     pub num_queries: usize,
@@ -13,7 +13,7 @@ pub struct FriConfigVariable<C: Config> {
     pub subgroups: Array<C, TwoAdicMultiplicativeCosetVariable<C>>,
 }
 
-#[derive(DslVariable, Clone)]
+#[derive(DslVariable, Debug, Clone)]
 pub struct FriProofVariable<C: Config> {
     pub commit_phase_commits: Array<C, DigestVariable<C>>,
     pub query_proofs: Array<C, FriQueryProofVariable<C>>,
@@ -21,48 +21,47 @@ pub struct FriProofVariable<C: Config> {
     pub pow_witness: Felt<C::F>,
 }
 
-#[derive(DslVariable, Clone)]
+#[derive(DslVariable, Debug, Clone)]
 pub struct FriQueryProofVariable<C: Config> {
     pub commit_phase_openings: Array<C, FriCommitPhaseProofStepVariable<C>>,
 }
 
-#[derive(DslVariable, Clone)]
+#[derive(DslVariable, Debug, Clone)]
 pub struct FriCommitPhaseProofStepVariable<C: Config> {
     pub sibling_value: Ext<C::F, C::EF>,
     pub opening_proof: Array<C, DigestVariable<C>>,
 }
 
-#[derive(DslVariable, Clone)]
+#[derive(DslVariable, Debug, Clone)]
 pub struct FriChallengesVariable<C: Config> {
     pub query_indices: Array<C, Array<C, Var<C::N>>>,
     pub betas: Array<C, Ext<C::F, C::EF>>,
 }
 
-#[derive(DslVariable, Clone)]
+#[derive(DslVariable, Debug, Clone)]
 pub struct DimensionsVariable<C: Config> {
     pub height: Var<C::N>,
 }
 
-#[derive(DslVariable, Clone)]
+#[derive(DslVariable, Debug, Clone)]
 pub struct TwoAdicPcsProofVariable<C: Config> {
     pub fri_proof: FriProofVariable<C>,
     pub query_openings: Array<C, Array<C, BatchOpeningVariable<C>>>,
 }
 
-#[derive(DslVariable, Clone)]
+#[derive(DslVariable, Debug, Clone)]
 pub struct BatchOpeningVariable<C: Config> {
     pub opened_values: Array<C, Array<C, Ext<C::F, C::EF>>>,
     pub opening_proof: Array<C, Array<C, Felt<C::F>>>,
 }
 
-#[derive(DslVariable, Clone)]
+#[derive(DslVariable, Debug, Clone)]
 pub struct TwoAdicPcsRoundVariable<C: Config> {
     pub batch_commit: DigestVariable<C>,
     pub mats: Array<C, TwoAdicPcsMatsVariable<C>>,
 }
 
-#[allow(clippy::type_complexity)]
-#[derive(DslVariable, Clone)]
+#[derive(DslVariable, Debug, Clone)]
 pub struct TwoAdicPcsMatsVariable<C: Config> {
     pub domain: TwoAdicMultiplicativeCosetVariable<C>,
     pub points: Array<C, Ext<C::F, C::EF>>,

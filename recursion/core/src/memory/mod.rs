@@ -23,12 +23,30 @@ pub struct MemoryReadWriteCols<T> {
     pub prev_timestamp: T,
 }
 
+#[derive(AlignedBorrow, Default, Debug, Clone)]
+#[repr(C)]
+pub struct MemoryReadCols<T> {
+    pub addr: T,
+    pub value: Block<T>,
+    pub timestamp: T,
+    pub prev_timestamp: T,
+}
+
 impl<T: Clone> MemoryReadWriteCols<T> {
     pub fn populate(&mut self, record: &MemoryRecord<T>) {
         self.addr = record.addr.clone();
         self.value = record.value.clone();
         self.timestamp = record.timestamp.clone();
         self.prev_value = record.prev_value.clone();
+        self.prev_timestamp = record.prev_timestamp.clone();
+    }
+}
+
+impl<T: Clone> MemoryReadCols<T> {
+    pub fn populate(&mut self, record: &MemoryRecord<T>) {
+        self.addr = record.addr.clone();
+        self.value = record.value.clone();
+        self.timestamp = record.timestamp.clone();
         self.prev_timestamp = record.prev_timestamp.clone();
     }
 }

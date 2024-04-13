@@ -103,8 +103,10 @@ pub fn build_reduce_program(setup: bool) -> RecursionProgram<Val> {
     let time = Instant::now();
     let mut builder = AsmBuilder::<F, EF>::default();
     let sp1_config = const_fri_config(&mut builder, sp1_fri_config());
+    println!("sp1_config: {:?}", sp1_config.num_queries);
     // TODO: this config may change
     let recursion_config = const_fri_config(&mut builder, inner_fri_config());
+    println!("recursion_config: {:?}", recursion_config.num_queries);
     let sp1_pcs = TwoAdicFriPcsVariable { config: sp1_config };
     let recursion_pcs = TwoAdicFriPcsVariable {
         config: recursion_config,
@@ -147,7 +149,6 @@ pub fn build_reduce_program(setup: bool) -> RecursionProgram<Val> {
         return builder.compile_program();
     }
 
-    builder.print_debug(99999);
     let num_proofs = is_recursive_flags.len();
     let _pre_reconstruct_challenger = clone(&mut builder, &reconstruct_challenger);
     let zero: Var<_> = builder.constant(F::zero());

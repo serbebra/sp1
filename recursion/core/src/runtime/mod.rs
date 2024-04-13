@@ -6,6 +6,7 @@ mod record;
 use std::process::exit;
 use std::{marker::PhantomData, sync::Arc};
 
+use hashbrown::HashMap;
 pub use instruction::*;
 pub use opcode::*;
 use p3_poseidon2::Poseidon2;
@@ -57,19 +58,7 @@ pub struct MemoryEntry<F> {
 pub struct Runtime<F: PrimeField32, EF: ExtensionField<F>, Diffusion> {
     pub timestamp: usize,
 
-    pub nb_poseidons: usize,
-
-    pub nb_bit_decompositions: usize,
-
-    pub nb_ext_ops: usize,
-
-    pub nb_base_ops: usize,
-
-    pub nb_memory_ops: usize,
-
-    pub nb_print_f: usize,
-
-    pub nb_print_e: usize,
+    pub opcode_counts: HashMap<Opcode, usize>,
 
     /// The current clock.
     pub clk: F,
@@ -134,13 +123,7 @@ where
         };
         Self {
             timestamp: 0,
-            nb_poseidons: 0,
-            nb_bit_decompositions: 0,
-            nb_ext_ops: 0,
-            nb_base_ops: 0,
-            nb_memory_ops: 0,
-            nb_print_f: 0,
-            nb_print_e: 0,
+            opcode_counts: HashMap::new(),
             clk: F::zero(),
             program: program.clone(),
             fp: F::from_canonical_usize(STACK_SIZE),
@@ -161,13 +144,7 @@ where
         };
         Self {
             timestamp: 0,
-            nb_poseidons: 0,
-            nb_bit_decompositions: 0,
-            nb_ext_ops: 0,
-            nb_base_ops: 0,
-            nb_memory_ops: 0,
-            nb_print_f: 0,
-            nb_print_e: 0,
+            opcode_counts: HashMap::new(),
             clk: F::zero(),
             program: program.clone(),
             fp: F::from_canonical_usize(STACK_SIZE),
@@ -181,18 +158,46 @@ where
         }
     }
 
-    pub fn print_stats(&self) {
-        println!("Number of cycles: {}", self.timestamp);
-        println!("Number of Poseidon permutes: {}", self.nb_poseidons);
-        println!(
-            "Number of bit decompositions: {}",
-            self.nb_bit_decompositions
-        );
-        println!("Number of base ops: {}", self.nb_base_ops);
-        println!("Number of ext ops: {}", self.nb_ext_ops);
-        println!("Number of memory ops: {}", self.nb_memory_ops);
-        println!("Number of printf ops: {}", self.nb_print_f);
-        println!("Number of printef ops: {}", self.nb_print_e);
+    pub fn print_stats(&mut self) {
+        println!("number of cycles: {}", self.timestamp);
+
+        let mut nb_arithmetic_ops = 0;
+        nb_arithmetic_ops += *self.opcode_counts.entry(Opcode::ADD).or_insert(0);
+        nb_arithmetic_ops += *self.opcode_counts.entry(Opcode::SUB).or_insert(0);
+        nb_arithmetic_ops += *self.opcode_counts.entry(Opcode::MUL).or_insert(0);
+        nb_arithmetic_ops += *self.opcode_counts.entry(Opcode::DIV).or_insert(0);
+        println!("number of arithmetic ops: {}", nb_arithmetic_ops);
+
+        let mut nb_ext_ops = 0;
+        nb_ext_ops += *self.opcode_counts.entry(Opcode::EADD).or_insert(0);
+        nb_ext_ops += *self.opcode_counts.entry(Opcode::EFADD).or_insert(0);
+        nb_ext_ops += *self.opcode_counts.entry(Opcode::ESUB).or_insert(0);
+        nb_ext_ops += *self.opcode_counts.entry(Opcode::EFSUB).or_insert(0);
+        nb_ext_ops += *self.opcode_counts.entry(Opcode::FESUB).or_insert(0);
+        nb_ext_ops += *self.opcode_counts.entry(Opcode::EMUL).or_insert(0);
+        nb_ext_ops += *self.opcode_counts.entry(Opcode::EFMUL).or_insert(0);
+        nb_ext_ops += *self.opcode_counts.entry(Opcode::EDIV).or_insert(0);
+        nb_ext_ops += *self.opcode_counts.entry(Opcode::EFDIV).or_insert(0);
+        nb_ext_ops += *self.opcode_counts.entry(Opcode::FEDIV).or_insert(0);
+        println!("number of ext ops: {}", nb_ext_ops);
+
+        let mut nb_memory_ops = 0;
+        nb_memory_ops += *self.opcode_counts.entry(Opcode::LW).or_insert(0);
+        nb_memory_ops += *self.opcode_counts.entry(Opcode::SW).or_insert(0);
+        nb_memory_ops += *self.opcode_counts.entry(Opcode::LE).or_insert(0);
+        nb_memory_ops += *self.opcode_counts.entry(Opcode::SE).or_insert(0);
+        println!("number of memory ops: {}", nb_memory_ops);
+
+        let mut nb_branch_ops = 0;
+        nb_branch_ops += *self.opcode_counts.entry(Opcode::BEQ).or_insert(0);
+        nb_branch_ops += *self.opcode_counts.entry(Opcode::BNE).or_insert(0);
+        nb_branch_ops += *self.opcode_counts.entry(Opcode::EBEQ).or_insert(0);
+        nb_branch_ops += *self.opcode_counts.entry(Opcode::EBNE).or_insert(0);
+        println!("number of branch ops: {}", nb_branch_ops);
+
+        // for (k, v) in self.opcode_counts.iter() {
+        //     println!("> {:?} = {}", k, v);
+        // }
     }
 
     fn mr(&mut self, addr: F, position: MemoryAccessPosition) -> Block<F> {
@@ -350,21 +355,18 @@ where
             let (a, b, c): (Block<F>, Block<F>, Block<F>);
             match instruction.opcode {
                 Opcode::PrintF => {
-                    self.nb_print_f += 1;
                     let (a_ptr, b_val, c_val) = self.alu_rr(&instruction);
                     let a_val = self.mr(a_ptr, MemoryAccessPosition::A);
                     println!("PRINTF={}, clk={}", a_val[0], self.timestamp);
                     (a, b, c) = (a_val, b_val, c_val);
                 }
                 Opcode::PrintE => {
-                    self.nb_print_e += 1;
                     let (a_ptr, b_val, c_val) = self.alu_rr(&instruction);
                     let a_val = self.mr(a_ptr, MemoryAccessPosition::A);
                     println!("PRINTEF={:?}", a_val);
                     (a, b, c) = (a_val, b_val, c_val);
                 }
                 Opcode::ADD => {
-                    self.nb_base_ops += 1;
                     let (a_ptr, b_val, c_val) = self.alu_rr(&instruction);
                     let mut a_val = Block::default();
                     a_val.0[0] = b_val.0[0] + c_val.0[0];
@@ -379,7 +381,6 @@ where
                     (a, b, c) = (a_val, b_val, c_val);
                 }
                 Opcode::SUB => {
-                    self.nb_base_ops += 1;
                     let (a_ptr, b_val, c_val) = self.alu_rr(&instruction);
                     let mut a_val = Block::default();
                     a_val.0[0] = b_val.0[0] - c_val.0[0];
@@ -387,7 +388,6 @@ where
                     (a, b, c) = (a_val, b_val, c_val);
                 }
                 Opcode::MUL => {
-                    self.nb_base_ops += 1;
                     let (a_ptr, b_val, c_val) = self.alu_rr(&instruction);
                     let mut a_val = Block::default();
                     a_val.0[0] = b_val.0[0] * c_val.0[0];
@@ -395,7 +395,6 @@ where
                     (a, b, c) = (a_val, b_val, c_val);
                 }
                 Opcode::DIV => {
-                    self.nb_base_ops += 1;
                     let (a_ptr, b_val, c_val) = self.alu_rr(&instruction);
                     let mut a_val = Block::default();
                     a_val.0[0] = b_val.0[0] / c_val.0[0];
@@ -403,7 +402,6 @@ where
                     (a, b, c) = (a_val, b_val, c_val);
                 }
                 Opcode::EADD | Opcode::EFADD => {
-                    self.nb_ext_ops += 1;
                     let (a_ptr, b_val, c_val) = self.alu_rr(&instruction);
                     let sum = EF::from_base_slice(&b_val.0) + EF::from_base_slice(&c_val.0);
                     let a_val = Block::from(sum.as_base_slice());
@@ -411,7 +409,6 @@ where
                     (a, b, c) = (a_val, b_val, c_val);
                 }
                 Opcode::EMUL | Opcode::EFMUL => {
-                    self.nb_ext_ops += 1;
                     let (a_ptr, b_val, c_val) = self.alu_rr(&instruction);
                     let product = EF::from_base_slice(&b_val.0) * EF::from_base_slice(&c_val.0);
                     let a_val = Block::from(product.as_base_slice());
@@ -419,7 +416,6 @@ where
                     (a, b, c) = (a_val, b_val, c_val);
                 }
                 Opcode::ESUB | Opcode::EFSUB | Opcode::FESUB => {
-                    self.nb_ext_ops += 1;
                     let (a_ptr, b_val, c_val) = self.alu_rr(&instruction);
                     let diff = EF::from_base_slice(&b_val.0) - EF::from_base_slice(&c_val.0);
                     let a_val = Block::from(diff.as_base_slice());
@@ -427,7 +423,6 @@ where
                     (a, b, c) = (a_val, b_val, c_val);
                 }
                 Opcode::EDIV | Opcode::EFDIV | Opcode::FEDIV => {
-                    self.nb_ext_ops += 1;
                     let (a_ptr, b_val, c_val) = self.alu_rr(&instruction);
                     let quotient = EF::from_base_slice(&b_val.0) / EF::from_base_slice(&c_val.0);
                     let a_val = Block::from(quotient.as_base_slice());
@@ -435,7 +430,6 @@ where
                     (a, b, c) = (a_val, b_val, c_val);
                 }
                 Opcode::LW => {
-                    self.nb_memory_ops += 1;
                     let (a_ptr, b_val) = self.load_rr(&instruction);
                     let prev_a = self.get_memory_entry(a_ptr).value;
                     let a_val = Block::from([b_val[0], prev_a[1], prev_a[2], prev_a[3]]);
@@ -443,14 +437,12 @@ where
                     (a, b, c) = (a_val, b_val, Block::default());
                 }
                 Opcode::LE => {
-                    self.nb_memory_ops += 1;
                     let (a_ptr, b_val) = self.load_rr(&instruction);
                     let a_val = b_val;
                     self.mw(a_ptr, a_val, MemoryAccessPosition::A);
                     (a, b, c) = (a_val, b_val, Block::default());
                 }
                 Opcode::SW => {
-                    self.nb_memory_ops += 1;
                     let (a_ptr, b_val) = self.store_rr(&instruction);
                     let prev_a = self.get_memory_entry(a_ptr).value;
                     let a_val = Block::from([b_val[0], prev_a[1], prev_a[2], prev_a[3]]);
@@ -458,7 +450,6 @@ where
                     (a, b, c) = (a_val, b_val, Block::default());
                 }
                 Opcode::SE => {
-                    self.nb_memory_ops += 1;
                     let (a_ptr, b_val) = self.store_rr(&instruction);
                     let a_val = b_val;
                     self.mw(a_ptr, a_val, MemoryAccessPosition::A);
@@ -542,7 +533,6 @@ where
                     (a, b, c) = (a_val, b_val, c_val);
                 }
                 Opcode::Poseidon2Perm => {
-                    self.nb_poseidons += 1;
                     let (a_ptr, b_val, c_val) = self.alu_rr(&instruction);
                     let a_val = self.mr(a_ptr, MemoryAccessPosition::A);
 
@@ -574,8 +564,6 @@ where
                     (a, b, c) = (a_val, b_val, c_val);
                 }
                 Opcode::Poseidon2Compress => {
-                    self.nb_poseidons += 1;
-
                     let (a_ptr, b_val, c_val) = self.alu_rr(&instruction);
                     let a_val = self.mr(a_ptr, MemoryAccessPosition::A);
 
@@ -617,7 +605,6 @@ where
                     (a, b, c) = (a_val, b_val, c_val);
                 }
                 Opcode::HintBits => {
-                    self.nb_bit_decompositions += 1;
                     let (a_ptr, b_val, c_val) = self.alu_rr(&instruction);
                     let a_val = self.mr(a_ptr, MemoryAccessPosition::A);
 
@@ -712,6 +699,8 @@ where
                     (a, b, c) = (a_val, b_val, c_val);
                 }
             };
+
+            *self.opcode_counts.entry(instruction.opcode).or_insert(0) += 1;
 
             let event = CpuEvent {
                 clk: self.clk,

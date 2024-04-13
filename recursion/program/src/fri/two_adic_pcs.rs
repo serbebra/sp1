@@ -37,6 +37,8 @@ pub fn verify_two_adic_pcs<C: Config>(
     let fri_challenges =
         verify_shape_and_sample_challenges(builder, config, &proof.fri_proof, challenger);
 
+    builder.print_debug(99999);
+
     let commit_phase_commits_len = proof
         .fri_proof
         .commit_phase_commits
@@ -47,6 +49,7 @@ pub fn verify_two_adic_pcs<C: Config>(
     let mut reduced_openings: Array<C, Array<C, Ext<C::F, C::EF>>> =
         builder.array(proof.query_openings.len());
 
+    builder.print_u(proof.query_openings.len());
     builder
         .range(0, proof.query_openings.len())
         .for_each(|i, builder| {

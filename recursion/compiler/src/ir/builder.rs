@@ -291,6 +291,12 @@ impl<C: Config> Builder<C> {
         self.operations.push(DslIr::PrintV(dst));
     }
 
+    /// Print a usize.
+    pub fn print_u(&mut self, dst: Usize<C::N>) {
+        let dst = dst.materialize(self);
+        self.operations.push(DslIr::PrintV(dst));
+    }
+
     /// Print a felt.
     pub fn print_f(&mut self, dst: Felt<C::F>) {
         self.operations.push(DslIr::PrintF(dst));
