@@ -2,14 +2,12 @@ use std::fs::File;
 use std::io::{Seek, Write};
 use std::time::Instant;
 
-pub use baby_bear_blake3::BabyBearBlake3;
 use p3_challenger::CanObserve;
 use p3_field::PrimeField32;
 use serde::de::DeserializeOwned;
 use serde::Serialize;
 use size::Size;
 
-use crate::air::SP1_PROOF_NUM_PV_ELTS;
 use crate::runtime::{ExecutionRecord, ShardingConfig};
 use crate::stark::MachineRecord;
 use crate::stark::{Com, PcsProverData, RiscvAir, ShardProof, UniConfig};
@@ -20,6 +18,7 @@ use crate::{
     stark::StarkGenericConfig,
     stark::{LocalProver, OpeningProof, ShardMainData},
 };
+pub use baby_bear_blake3::BabyBearBlake3;
 
 use crate::{SP1ProofWithIO, SP1PublicValues, SP1Stdin};
 
@@ -195,7 +194,7 @@ where
 
         for (commitment, shard) in commitments.into_iter().zip(shards.iter()) {
             challenger.observe(commitment);
-            challenger.observe_slice(&shard.public_values::<SC::Val>()[0..SP1_PROOF_NUM_PV_ELTS]);
+            challenger.observe_slice(&shard.public_values::<SC::Val>());
         }
     }
 
