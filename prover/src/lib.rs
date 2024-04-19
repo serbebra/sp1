@@ -36,7 +36,29 @@ use sp1_recursion_program::{hints::Hintable, reduce::build_reduce_program, stark
 use std::time::Instant;
 
 pub type SP1Proof = Proof<SP1SC>;
+pub type SP1CompressedProof = ReduceProof<InnerSC>;
 pub type SP1SC = BabyBearPoseidon2;
+
+/// The SP1 representation of the Groth16 SNARK.
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct SP1Groth16Proof {
+    /// The `A` element in `G1` represented as a list of 2 byte arrays.
+    pub a: Vec<Vec<u8>>,
+    /// The `B` element in `G2` represented as a 2 x 2 matrix of byte arrays.
+    pub b: Vec<Vec<Vec<u8>>>,
+    /// The `C` element in `G1` represented as a list of 2 byte arrays.
+    pub c: Vec<Vec<u8>>,
+}
+
+impl Default for SP1Groth16Proof {
+    fn default() -> Self {
+        Self {
+            a: vec![vec![0u8; 32]; 2],
+            b: vec![vec![vec![0u8; 32]; 2]; 2],
+            c: vec![vec![0u8; 32]; 2],
+        }
+    }
+}
 
 type SP1F = <SP1SC as StarkGenericConfig>::Val;
 type InnerSC = BabyBearPoseidon2Inner;
@@ -510,6 +532,8 @@ impl SP1ProverImpl {
         groth16_ffi::prove(constraints, witness);
         let duration = start.elapsed().as_secs();
         println!("wrap duration = {}", duration);
+
+        SP1Groth16Proof::default();
     }
 
     /// Verify a proof of an SP1 program and its inputs.
