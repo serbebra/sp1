@@ -1,5 +1,6 @@
 #![allow(incomplete_features)]
 #![feature(generic_const_exprs)]
+use crate::types::SP1ProofWithIO;
 use anyhow::Result;
 use itertools::Itertools;
 use p3_baby_bear::BabyBear;
@@ -22,6 +23,8 @@ use sp1_core::{
 };
 use std::fs;
 
+pub mod types;
+
 pub mod utils {
     pub use sp1_core::utils::{setup_logger, setup_tracer};
 }
@@ -40,7 +43,7 @@ use sp1_recursion_core::{
 use sp1_recursion_program::{hints::Hintable, reduce::build_reduce_program, stark::EMPTY};
 use std::time::Instant;
 
-pub type SP1Proof = Proof<SP1SC>;
+pub type SP1CoreProof = Proof<SP1SC>;
 pub type SP1SC = BabyBearPoseidon2;
 
 type SP1F = <SP1SC as StarkGenericConfig>::Val;
@@ -561,24 +564,6 @@ impl SP1ProverImpl {
         }
 
         Result::Ok(deferred_digest)
-    }
-}
-
-/// A proof of a RISCV ELF execution with given inputs and outputs.
-#[derive(Serialize, Deserialize)]
-pub struct SP1ProofWithIO<SC: StarkGenericConfig + Serialize + DeserializeOwned> {
-    #[serde(with = "proof_serde")]
-    pub proof: Proof<SC>,
-    pub stdin: SP1Stdin,
-    pub public_values: SP1PublicValues,
-}
-
-impl<SC: StarkGenericConfig + Serialize + DeserializeOwned> SP1ProofWithIO<SC> {
-    /// Saves the proof as a JSON to the given path.
-    pub fn save(&self, path: &str) -> Result<()> {
-        let data = serde_json::to_string(self).unwrap();
-        fs::write(path, data).unwrap();
-        Ok(())
     }
 }
 
