@@ -19,14 +19,17 @@ resolver = "2"
 
 [profile.release]
 opt-level = 3
+incremental = true
 
 [profile.bench]
 opt-level = 3
+incremental = true
 
 [profile.fast]
 inherits = "release"
 debug = true
 debug-assertions = true
+incremental = true
 
 [workspace.dependencies]
 p3-air = { git = "https://github.com/Plonky3/Plonky3.git", branch = "sp1" }
