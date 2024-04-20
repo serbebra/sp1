@@ -5,6 +5,7 @@ pub mod bls12381;
 pub mod bn254;
 pub mod io;
 pub mod secp256k1;
+pub mod serde;
 pub mod uint256_div;
 pub mod unconstrained;
 pub mod utils;

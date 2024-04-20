@@ -54,14 +54,25 @@ pub fn read_vec() -> Vec<u8> {
 
 pub fn read<T: DeserializeOwned>() -> T {
     let vec = read_vec();
-    bincode::deserialize(&vec).expect("deserialization failed")
+    // bincode::deserialize(&vec).expect("deserialization failed")
+
+    let read_slice: &[u32] = bytemuck::cast_slice(&vec);
+    crate::serde::from_slice(read_slice).expect("serialization failed")
 }
 
 pub fn commit<T: Serialize>(value: &T) {
-    let writer = SyscallWriter {
+    // let writer = SyscallWriter {
+    //     fd: FD_PUBLIC_VALUES,
+    // };
+    // bincode::serialize_into(writer, value).expect("serialization failed");
+    let mut writer = SyscallWriter {
         fd: FD_PUBLIC_VALUES,
     };
-    bincode::serialize_into(writer, value).expect("serialization failed");
+    let output = crate::serde::to_vec(value).expect("serialization failed");
+    let output_slice: &[u8] = bytemuck::cast_slice(&output);
+    writer
+        .write_all(output_slice)
+        .expect("serialization failed");
 }
 
 pub fn commit_slice(buf: &[u8]) {
@@ -72,8 +83,15 @@ pub fn commit_slice(buf: &[u8]) {
 }
 
 pub fn hint<T: Serialize>(value: &T) {
-    let writer = SyscallWriter { fd: FD_HINT };
-    bincode::serialize_into(writer, value).expect("serialization failed");
+    // let writer = SyscallWriter { fd: FD_HINT };
+    // bincode::serialize_into(writer, value).expect("serialization failed");
+
+    let mut writer = SyscallWriter { fd: FD_HINT };
+    let output = crate::serde::to_vec(value).expect("serialization failed");
+    let output_slice: &[u8] = bytemuck::cast_slice(&output);
+    writer
+        .write_all(output_slice)
+        .expect("serialization failed");
 }
 
 pub fn hint_slice(buf: &[u8]) {

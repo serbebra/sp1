@@ -33,7 +33,10 @@ sp1-derive = { path = "../derive" }
 sp1-primitives = { path = "../primitives" }
 
 anyhow = "1.0.79"
-amcl = { package = "snowbridge-amcl", version="1.0.2", default-features = false, features = ["bls381"]}
+bytemuck = "1.15.0"
+amcl = { package = "snowbridge-amcl", version = "1.0.2", default-features = false, features = [
+    "bls381",
+] }
 arrayref = "0.3.6"
 blake3 = "1.5"
 blake3-zkvm = { git = "https://github.com/sp1-patches/BLAKE3.git", branch = "patch-blake3_zkvm/v.1.0.0" }
@@ -55,6 +58,7 @@ strum_macros = "0.26.2"
 strum = "0.26.2"
 web-time = "1.1.0"
 rayon-scan = "0.1.1"
+sp1-precompiles = { path = "../zkvm/precompiles" }
 
 [dev-dependencies]
 tiny-keccak = { version = "2.0.2", features = ["keccak"] }
