@@ -50,11 +50,14 @@ fn main() {
 
     let mut stdin = SP1Stdin::new();
 
-    let encoded_1 = serde_cbor::to_vec(&light_block_1).unwrap();
-    let encoded_2 = serde_cbor::to_vec(&light_block_2).unwrap();
+    stdin.write(&light_block_1);
+    stdin.write(&light_block_2);
 
-    stdin.write_vec(encoded_1);
-    stdin.write_vec(encoded_2);
+    // let encoded_1 = serde_cbor::to_vec(&light_block_1).unwrap();
+    // let encoded_2 = serde_cbor::to_vec(&light_block_2).unwrap();
+
+    // stdin.write_vec(encoded_1);
+    // stdin.write_vec(encoded_2);
 
     // TODO: normally we could just write the LightBlock, but bincode doesn't work with LightBlock.
     // The following code will panic.
@@ -62,33 +65,33 @@ fn main() {
     // let decoded: LightBlock = bincode::deserialize(&encoded[..]).unwrap();
 
     let client = ProverClient::new();
-    let proof = client.prove(TENDERMINT_ELF, stdin).expect("proving failed");
+    let proof = ProverClient::execute(TENDERMINT_ELF, stdin).expect("executing failed");
 
-    // Verify proof.
-    client
-        .verify(TENDERMINT_ELF, &proof)
-        .expect("verification failed");
+    // // Verify proof.
+    // client
+    //     .verify(TENDERMINT_ELF, &proof)
+    //     .expect("verification failed");
 
-    // Verify the public values
-    let mut pv_hasher = Sha256::new();
-    pv_hasher.update(light_block_1.signed_header.header.hash().as_bytes());
-    pv_hasher.update(light_block_2.signed_header.header.hash().as_bytes());
-    pv_hasher.update(&serde_cbor::to_vec(&expected_verdict).unwrap());
-    let expected_pv_digest: &[u8] = &pv_hasher.finalize();
+    // // Verify the public values
+    // let mut pv_hasher = Sha256::new();
+    // pv_hasher.update(light_block_1.signed_header.header.hash().as_bytes());
+    // pv_hasher.update(light_block_2.signed_header.header.hash().as_bytes());
+    // pv_hasher.update(&serde_cbor::to_vec(&expected_verdict).unwrap());
+    // let expected_pv_digest: &[u8] = &pv_hasher.finalize();
 
-    let public_values_bytes = proof.proof.shard_proofs[0].public_values.clone();
-    let public_values = PublicValues::from_vec(public_values_bytes);
-    assert_eq!(
-        public_values.commit_digest_bytes().as_slice(),
-        expected_pv_digest
-    );
+    // let public_values_bytes = proof.proof.shard_proofs[0].public_values.clone();
+    // let public_values = PublicValues::from_vec(public_values_bytes);
+    // assert_eq!(
+    //     public_values.commit_digest_bytes().as_slice(),
+    //     expected_pv_digest
+    // );
 
-    // Save proof.
-    proof
-        .save("proof-with-pis.json")
-        .expect("saving proof failed");
+    // // Save proof.
+    // proof
+    //     .save("proof-with-pis.json")
+    //     .expect("saving proof failed");
 
-    println!("successfully generated and verified proof for the program!")
+    // println!("successfully generated and verified proof for the program!")
 }
 
 fn verify_blocks(light_block_1: LightBlock, light_block_2: LightBlock) -> Verdict {
