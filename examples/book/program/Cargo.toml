@@ -1,0 +1,12 @@
+[workspace]
+[package]
+version = "0.1.0"
+name = "book-program"
+edition = "2021"
+
+[dependencies]
+sp1-zkvm = { path = "../../../zkvm/entrypoint" }
+reth-primitives = { git = "https://github.com/sp1-patches/reth", default-features = false, branch = "sp1-reth" }
+serde = { version = "1.0", default-features = false, features = ["derive"] }
+bincode = "1.3.3"
+serde_cbor = "0.11.2"
