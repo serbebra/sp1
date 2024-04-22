@@ -84,7 +84,7 @@ pub struct Runtime {
 
     pub emit_events: bool,
 
-    pub load_store_count :std::collections::HashMap<OpCode, u32>
+    pub load_store_count :std::collections::HashMap<Opcode, u32>
 }
 
 impl Runtime {
@@ -133,7 +133,7 @@ impl Runtime {
             syscall_map,
             emit_events: true,
             max_syscall_cycles,
-            std::collections::HashMap::new()
+            load_store_count: std::collections::HashMap::new()
         }
     }
 
@@ -955,8 +955,20 @@ impl Runtime {
         }
 
         tracing::info!(
-            "Store-Load Info: \n {}",
+            "Store-Load Info:\n{}",
             self.load_store_count
+                .iter()
+                .map(|(opcode, count)| {
+                    let optype = match opcode {
+                        Opcode::LB => "Load",
+                        Opcode::SB => "Store",
+                        Opcode::ADD => "Other",
+                        _ => "Truly Other ??!?!?!",
+                    };
+                    format!("{:?}: {}", optype, count)
+    })
+                .collect::<Vec<String>>()
+                .join("\n")
         );
 
         done
