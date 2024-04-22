@@ -1,0 +1,22 @@
+{
+    "title": "The Great Adventure",
+    "name": "Epic Journey",
+    "authors": [
+        "John Doe",
+        "Jane Smith"
+    ],
+    "chapters": [
+        {
+            "chapter_title": "The Beginning",
+            "summary": "Our story begins in a small town..."
+        },
+        {
+            "chapter_title": "The Middle",
+            "summary": "Our heroes face various challenges..."
+        },
+        {
+            "chapter_title": "The End",
+            "summary": "Our journey concludes with a surprising twist..."
+        }
+    ]
+}
