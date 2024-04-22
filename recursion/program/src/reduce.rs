@@ -12,7 +12,7 @@ use sp1_core::utils::BabyBearPoseidon2;
 use sp1_core::utils::{inner_fri_config, sp1_fri_config, BabyBearPoseidon2Inner};
 use sp1_recursion_compiler::asm::{AsmBuilder, AsmConfig};
 use sp1_recursion_compiler::ir::{Array, Felt, Var};
-use sp1_recursion_core::air::PublicValues as RecursionPublicValues;
+use sp1_recursion_compiler::prelude::Usize;
 use sp1_recursion_core::cpu::Instruction;
 use sp1_recursion_core::runtime::{RecursionProgram, DIGEST_SIZE};
 use sp1_recursion_core::stark::RecursionAir;
@@ -80,10 +80,6 @@ impl ReduceProgram {
             builder.uninit();
         let sp1_vk: VerifyingKeyVariable<_> = builder.uninit();
         let recursion_vk: VerifyingKeyVariable<_> = builder.uninit();
-        let start_pcs: Array<_, Felt<_>> = builder.uninit();
-        let next_pcs: Array<_, Felt<_>> = builder.uninit();
-        let start_shards: Array<_, Felt<_>> = builder.uninit();
-        let next_shards: Array<_, Felt<_>> = builder.uninit();
         let proofs: Array<_, ShardProofVariable<_>> = builder.uninit();
         let deferred_proof_digest: Array<_, Felt<_>> = builder.uninit();
         let deferred_sorted_indices: Array<_, Array<_, Var<_>>> = builder.uninit();
@@ -109,10 +105,6 @@ impl ReduceProgram {
             );
             StarkVerifyingKey::<SC>::witness(&sp1_vk, &mut builder);
             StarkVerifyingKey::<SC>::witness(&recursion_vk, &mut builder);
-            Vec::<Val>::witness(&start_pcs, &mut builder);
-            Vec::<Val>::witness(&next_pcs, &mut builder);
-            Vec::<Val>::witness(&start_shards, &mut builder);
-            Vec::<Val>::witness(&next_shards, &mut builder);
 
             let num_proofs = is_recursive_flags.len();
             let mut proofs_target = builder.dyn_array(num_proofs);
@@ -157,17 +149,17 @@ impl ReduceProgram {
         builder.cycle_tracker("stage-b-setup-recursion-challenger");
 
         // Verify sp1 and recursive proofs.
-        let expected_start_pc = builder.get(&start_pcs, zero);
-        let expected_start_shard = builder.get(&start_shards, zero);
+        let expected_start_pc = builder.get(&proofs, zero).public_values.start_pc;
+        let expected_start_shard = builder.get(&proofs, zero).public_values.start_shard;
         builder.range(0, num_proofs).for_each(|i, builder| {
             let proof = builder.get(&proofs, i);
             let sorted_indices = builder.get(&sorted_indices, i);
             let is_recursive = builder.get(&is_recursive_flags, i);
 
-            let shard_start_pc = builder.get(&start_pcs, i);
-            let shard_next_pc = builder.get(&next_pcs, i);
-            let shard_start_shard = builder.get(&start_shards, i);
-            let shard_next_shard = builder.get(&next_shards, i);
+            let shard_start_pc = proof.public_values.start_pc;
+            let shard_next_pc = proof.public_values.next_pc;
+            let shard_start_shard = proof.public_values.start_shard;
+            let shard_next_shard = proof.public_values.next_shard;
 
             // Verify shard transition.
             builder.assert_felt_eq(expected_start_pc, shard_start_pc);
@@ -200,6 +192,7 @@ impl ReduceProgram {
                             builder.assert_felt_eq(shard_next_shard, pv_shard_plus_one);
                         },
                     );
+                    builder.assert_felt_eq(proof.public_values.exit_code, pv.exit_code);
 
                     // Need to convert the shard as a felt to a variable, since `if_eq` only handles
                     // variables.
@@ -366,15 +359,20 @@ impl ReduceProgram {
         // Note we still need to check that verify_start_challenger matches final reconstruct_challenger
         // after observing pv_digest at the end.
 
-        let start_pc = builder.get(&start_pcs, zero);
-        let start_shard = builder.get(&start_shards, zero);
-        let last_idx: Var<_> = builder.eval(num_proofs - one);
-        let next_pc = builder.get(&next_pcs, last_idx);
-        let next_shard = builder.get(&next_shards, last_idx);
-        builder.write_public_value(start_pc);
-        builder.write_public_value(start_shard);
-        builder.write_public_value(next_pc);
-        builder.write_public_value(next_shard);
+        let left_most_proof = builder.get(&proofs, zero);
+        let last_proof_idx = Usize::Var(builder.eval(num_proofs - one));
+        let right_most_proof = builder.get(&proofs, last_proof_idx);
+
+        let new_pv = ReduceProofPublicValuesVariable {
+            start_pc: left_most_proof.public_values.start_pc,
+            next_pc: right_most_proof.public_values.next_pc,
+            start_shard: left_most_proof.public_values.start_shard,
+            next_shard: right_most_proof.public_values.next_shard,
+            exit_code: right_most_proof.public_values.exit_code,
+        };
+        let new_pv_array = new_pv.to_array(&mut builder);
+
+        builder.write_public_values(&new_pv_array);
         builder.commit_public_values();
 
         builder.compile_program()

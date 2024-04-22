@@ -88,10 +88,38 @@ pub struct SP1CoreProof {
 #[serde(bound(deserialize = "ShardProof<SC>: Deserialize<'de>"))]
 pub struct SP1ReduceProof<SC: StarkGenericConfig> {
     pub proof: ShardProof<SC>,
+    pub public_values: SP1ReduceProofPublicValues<SC>,
+}
+
+impl<SC: StarkGenericConfig> From<ShardProof<SC>> for SP1ReduceProof<SC> {
+    fn from(shard_proof: ShardProof<SC>) -> Self {
+        let pv =
+            PublicValues::<Word<SC::Val>, SC::Val>::from_vec(shard_proof.public_values.clone());
+
+        SP1ReduceProof {
+            proof: shard_proof,
+            public_values: ReduceProofPublicValues {
+                start_pc: pv.start_pc,
+                next_pc: pv.next_pc,
+                start_shard: pv.shard,
+                next_shard: if pv.next_pc == SC::Val::zero() {
+                    SC::Val::zero()
+                } else {
+                    pv.shard + SC::Val::one()
+                },
+                exit_code: pv.exit_code,
+            },
+        }
+    }
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct SP1ReduceProofPublicValues<SC: StarkGenericConfig> {
     pub start_pc: SC::Val,
     pub next_pc: SC::Val,
     pub start_shard: SC::Val,
     pub next_shard: SC::Val,
+    pub exit_code: SC::Val,
 }
 
 /// A wrapper to abstract proofs representing a range of shards with multiple proving configs.
@@ -176,13 +204,16 @@ impl SP1Prover {
                 );
                 SP1ReduceProofWrapper::Core(SP1ReduceProof {
                     proof,
-                    start_pc: public_values.start_pc,
-                    next_pc: public_values.next_pc,
-                    start_shard: public_values.shard,
-                    next_shard: if public_values.next_pc == Val::<CoreSC>::zero() {
-                        Val::<CoreSC>::zero()
-                    } else {
-                        public_values.shard + Val::<CoreSC>::one()
+                    public_values: SP1ReduceProofPublicValues {
+                        start_pc: public_values.start_pc,
+                        next_pc: public_values.next_pc,
+                        start_shard: public_values.shard,
+                        next_shard: if public_values.next_pc == Val::<CoreSC>::zero() {
+                            Val::<CoreSC>::zero()
+                        } else {
+                            public_values.shard + Val::<CoreSC>::one()
+                        },
+                        exit_code: public_values.exit_code,
                     },
                 })
             })
@@ -276,34 +307,6 @@ impl SP1Prover {
                 }
             })
             .collect();
-        let start_pcs = reduce_proofs
-            .iter()
-            .map(|p| match p {
-                SP1ReduceProofWrapper::Core(ref proof) => proof.start_pc,
-                SP1ReduceProofWrapper::Recursive(ref proof) => proof.start_pc,
-            })
-            .collect_vec();
-        let next_pcs = reduce_proofs
-            .iter()
-            .map(|p| match p {
-                SP1ReduceProofWrapper::Core(ref proof) => proof.next_pc,
-                SP1ReduceProofWrapper::Recursive(ref proof) => proof.next_pc,
-            })
-            .collect_vec();
-        let start_shards = reduce_proofs
-            .iter()
-            .map(|p| match p {
-                SP1ReduceProofWrapper::Core(ref proof) => proof.start_shard,
-                SP1ReduceProofWrapper::Recursive(ref proof) => proof.start_shard,
-            })
-            .collect_vec();
-        let next_shards = reduce_proofs
-            .iter()
-            .map(|p| match p {
-                SP1ReduceProofWrapper::Core(ref proof) => proof.next_shard,
-                SP1ReduceProofWrapper::Recursive(ref proof) => proof.next_shard,
-            })
-            .collect_vec();
         let (prep_sorted_indices, prep_domains): (Vec<usize>, Vec<Domain<CoreSC>>) =
             get_preprocessed_data(&core_machine, &vk.vk);
         let (recursion_prep_sorted_indices, recursion_prep_domains): (
@@ -334,17 +337,13 @@ impl SP1Prover {
         witness_stream.extend(recursion_prep_domains.write());
         witness_stream.extend(vk.vk.write());
         witness_stream.extend(self.reduce_vk_inner.write());
-        witness_stream.extend(Hintable::write(&start_pcs));
-        witness_stream.extend(Hintable::write(&next_pcs));
-        witness_stream.extend(Hintable::write(&start_shards));
-        witness_stream.extend(Hintable::write(&next_shards));
         for proof in reduce_proofs.iter() {
             match proof {
                 SP1ReduceProofWrapper::Core(reduce_proof) => {
-                    witness_stream.extend(reduce_proof.proof.write());
+                    witness_stream.extend(reduce_proof.write());
                 }
                 SP1ReduceProofWrapper::Recursive(reduce_proof) => {
-                    witness_stream.extend(reduce_proof.proof.write());
+                    witness_stream.extend(reduce_proof.write());
                 }
             }
         }
@@ -387,13 +386,44 @@ impl SP1Prover {
 
         // Return the reduced proof.
         assert!(proof.shard_proofs.len() == 1);
-        let proof = proof.shard_proofs.into_iter().next().unwrap();
+        let shard_proof = proof.shard_proofs.into_iter().next().unwrap();
+
+        let (start_pc, start_shard) = match reduce_proofs[0] {
+            ReduceProofType::SP1(ref proof) => (
+                shard_proof.public_values.start_pc,
+                shard_proof.public_values.start_shard,
+            ),
+            ReduceProofType::Recursive(ref proof) => (
+                shard_proof.public_values.start_pc,
+                shard_proof.public_values.start_shard,
+            ),
+            _ => unreachable!(),
+        };
+
+        let last_proof_idx = reduce_proofs.len() - 1;
+        let (next_pc, next_shard, exit_code) = match reduce_proofs[last_proof_idx] {
+            ReduceProofType::SP1(ref proof) => (
+                shard_proof.public_values.next_pc,
+                shard_proof.public_values.next_shard,
+                shard_proof.public_values.exit_code,
+            ),
+            ReduceProofType::Recursive(ref proof) => (
+                shard_proof.public_values.next_pc,
+                shard_proof.public_values.next_shard,
+                shard_proof.public_values.exit_code,
+            ),
+            _ => unreachable!(),
+        };
+
         SP1ReduceProof {
-            proof,
-            start_pc: start_pcs[0],
-            next_pc: next_pcs[next_pcs.len() - 1],
-            start_shard: start_shards[0],
-            next_shard: next_shards[next_shards.len() - 1],
+            proof: shard_proof,
+            public_values: ReduceProofPublicValues {
+                start_pc,
+                next_pc,
+                start_shard,
+                next_shard,
+                exit_code,
+            },
         }
     }
 

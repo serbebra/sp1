@@ -5,10 +5,63 @@ use sp1_core::{
     stark::{AirOpenedValues, Chip, ChipOpenedValues},
 };
 use sp1_recursion_compiler::prelude::*;
+use sp1_recursion_core::runtime::DIGEST_SIZE;
 
 use crate::fri::types::TwoAdicPcsProofVariable;
 use crate::fri::types::{DigestVariable, FriConfigVariable};
 use crate::fri::TwoAdicMultiplicativeCosetVariable;
+
+#[derive(DslVariable, Clone)]
+pub struct SP1ReduceProofPublicValuesVariable<C: Config> {
+    pub start_pc: Felt<C::F>,
+    pub next_pc: Felt<C::F>,
+    pub start_shard: Felt<C::F>,
+    pub next_shard: Felt<C::F>,
+    pub exit_code: Felt<C::F>,
+}
+
+impl<C: Config> SP1ReduceProofPublicValuesVariable<C> {
+    pub fn to_array(&self, builder: &mut Builder<C>) -> Array<C, Felt<C::F>> {
+        let mut array = builder.array(4);
+        builder.set(&mut array, 0, self.start_pc);
+        builder.set(&mut array, 1, self.start_shard);
+        builder.set(&mut array, 2, self.next_pc);
+        builder.set(&mut array, 3, self.next_shard);
+        array
+    }
+
+    pub fn verify_digest(
+        &self,
+        builder: &mut Builder<C>,
+        expected_digest: [Felt<C::F>; DIGEST_SIZE],
+    ) {
+        let elt_array = self.to_array(builder);
+        let pv_digest = builder.poseidon2_hash(&elt_array);
+
+        for (j, expected_digest_elt) in expected_digest.iter().enumerate().take(DIGEST_SIZE) {
+            let digest_element = builder.get(&pv_digest, j);
+            builder.assert_felt_eq(*expected_digest_elt, digest_element);
+        }
+    }
+}
+
+#[derive(DslVariable, Clone)]
+pub struct SP1ReduceProofVariable<C: Config> {
+    pub proof: ShardProofVariable<C>,
+    pub public_values: SP1ReduceProofPublicValuesVariable<C>,
+}
+
+impl<C: Config> SP1ReduceProofVariable<C> {
+    pub fn get_expected_pv_digest(&self, builder: &mut Builder<C>) -> [Felt<C::F>; DIGEST_SIZE] {
+        let mut expected_digest = Vec::new();
+
+        for i in 0..DIGEST_SIZE {
+            expected_digest.push(builder.get(&self.shard_proof.public_values, i));
+        }
+
+        expected_digest.try_into().unwrap()
+    }
+}
 
 /// Reference: [sp1_core::stark::ShardProof]
 #[derive(DslVariable, Clone)]
