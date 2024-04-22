@@ -83,6 +83,8 @@ pub struct Runtime {
     pub max_syscall_cycles: u32,
 
     pub emit_events: bool,
+
+    pub load_store_count :std::collections::HashMap<OpCode, u32>
 }
 
 impl Runtime {
@@ -131,6 +133,7 @@ impl Runtime {
             syscall_map,
             emit_events: true,
             max_syscall_cycles,
+            std::collections::HashMap::new()
         }
     }
 
@@ -514,6 +517,22 @@ impl Runtime {
         let (addr, memory_read_value): (u32, u32);
         let mut memory_store_value: Option<u32> = None;
         self.memory_accesses = MemoryAccessRecord::default();
+
+        //For load-store benchmarking
+        match instruction.opcode{
+            Opcode::LB | Opcode::LH | Opcode::LW | Opcode::LBU | Opcode::LHU => {
+                let count = self.load_store_count.entry(Opcode::LB).or_insert(0);
+                *count += 1;
+            }
+            Opcode::SB | Opcode::SH | Opcode::SW => {
+                let count = self.load_store_count.entry(Opcode::SB).or_insert(0);
+                *count += 1;
+            }
+            _ => {
+                let count = self.load_store_count.entry(Opcode::ADD).or_insert(0);
+                *count += 1;
+            }
+        }
 
         match instruction.opcode {
             // Arithmetic instructions.
@@ -934,6 +953,11 @@ impl Runtime {
         if done {
             self.postprocess();
         }
+
+        tracing::info!(
+            "Store-Load Info: \n {}",
+            self.load_store_count
+        );
 
         done
     }
