@@ -1193,6 +1193,7 @@ dependencies = [
 name = "tendermint-program"
 version = "0.1.0"
 dependencies = [
+ "bincode",
  "serde",
  "serde_cbor",
  "serde_json",

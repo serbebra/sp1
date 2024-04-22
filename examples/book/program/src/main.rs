@@ -6,9 +6,6 @@ use reth_primitives::{Block, Header};
 use serde::{Deserialize, Serialize};
 
 pub fn main() {
-    // NOTE: values of n larger than 186 will overflow the u128 type,
-    // resulting in output that doesn't match fibonacci sequence.
-    // However, the resulting proof will still be valid!
     println!("cycle-tracker-start: r0 serde");
     let header = sp1_zkvm::io::read::<Block>();
     println!("cycle-tracker-end: r0 serde");

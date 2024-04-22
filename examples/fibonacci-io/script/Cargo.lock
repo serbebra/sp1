@@ -843,6 +843,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c3ac9f8b63eca6fd385229b3675f6cc0dc5c8a5c8a54a59d4f52ffd670d87b0c"
 
 [[package]]
+name = "bytemuck"
+version = "1.15.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "5d6d68c57235a3a081186990eca2867354726650f42f7516ca50c28d6281fd15"
+
+[[package]]
 name = "byteorder"
 version = "1.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1256,6 +1262,7 @@ dependencies = [
  "rand_core",
  "sec1",
  "subtle",
+ "tap",
  "zeroize",
 ]
 
@@ -1325,6 +1332,7 @@ version = "0.13.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ded41244b729663b1e574f1b4fb731469f69f79c17667b5d776b16cda0479449"
 dependencies = [
+ "bitvec",
  "rand_core",
  "subtle",
 ]
@@ -3646,6 +3654,7 @@ dependencies = [
  "bincode",
  "blake3",
  "blake3-zkvm",
+ "bytemuck",
  "cfg-if",
  "curve25519-dalek",
  "elf",
@@ -3682,6 +3691,7 @@ dependencies = [
  "size",
  "snowbridge-amcl",
  "sp1-derive",
+ "sp1-precompiles",
  "sp1-primitives",
  "strum",
  "strum_macros",
@@ -3708,6 +3718,23 @@ version = "0.1.0"
 dependencies = [
  "cargo_metadata",
  "chrono",
+]
+
+[[package]]
+name = "sp1-precompiles"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "bincode",
+ "bytemuck",
+ "cfg-if",
+ "getrandom",
+ "hex",
+ "k256",
+ "num",
+ "rand",
+ "serde",
+ "snowbridge-amcl",
 ]
 
 [[package]]

@@ -1,4 +1,5 @@
 #![allow(unused_unsafe)]
+use crate::serde::{align_up, to_vec};
 use crate::syscall_write;
 use crate::{syscall_hint_len, syscall_hint_read};
 use serde::de::DeserializeOwned;
@@ -54,9 +55,12 @@ pub fn read_vec() -> Vec<u8> {
 
 pub fn read<T: DeserializeOwned>() -> T {
     let vec = read_vec();
+
     // bincode::deserialize(&vec).expect("deserialization failed")
 
-    let read_slice: &[u32] = bytemuck::cast_slice(&vec);
+    // Cast to u32
+    let read_slice: &[u32] = bytemuck::try_cast_slice(&vec).expect("casting (read) failed");
+
     crate::serde::from_slice(read_slice).expect("serialization failed")
 }
 

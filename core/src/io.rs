@@ -37,7 +37,8 @@ impl SP1Stdin {
 
     /// Read a value from the buffer.
     pub fn read<T: Serialize + DeserializeOwned>(&mut self) -> T {
-        let read_slice: &[u32] = bytemuck::cast_slice(&self.buffer[self.ptr]);
+        let val = self.buffer[self.ptr].clone();
+        let read_slice: &[u32] = bytemuck::try_cast_slice(&val).expect("casting (read) failed");
         let result: T =
             sp1_precompiles::serde::from_slice(read_slice).expect("serialization failed");
         // let result: T =
@@ -56,7 +57,8 @@ impl SP1Stdin {
     pub fn write<T: Serialize>(&mut self, data: &T) {
         // let mut tmp = Vec::new();
         let output = sp1_precompiles::serde::to_vec(data).expect("serialization failed");
-        let output_slice: &[u8] = bytemuck::cast_slice(&output);
+        let output_slice: &[u8] =
+            bytemuck::try_cast_slice(&output).expect("casting (write) failed");
         // bincode::serialize_into(&mut tmp, data).expect("serialization failed");
         self.buffer.push(output_slice.to_vec());
     }

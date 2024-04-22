@@ -3,7 +3,9 @@ sp1_zkvm::entrypoint!(main);
 
 use core::time::Duration;
 use tendermint_light_client_verifier::{
-    options::Options, types::LightBlock, ProdVerifier, Verdict, Verifier,
+    options::Options,
+    types::{Commit, Header, LightBlock, SignedHeader, ValidatorSet},
+    ProdVerifier, Verdict, Verifier,
 };
 
 fn main() {
@@ -11,8 +13,12 @@ fn main() {
     // This is likely a bug in tendermint-rs.
 
     println!("cycle-tracker-start: serde");
-    let light_block_1 = sp1_zkvm::io::read::<LightBlock>();
-    let light_block_2 = sp1_zkvm::io::read::<LightBlock>();
+    let data = sp1_zkvm::io::read_vec();
+    let validator_set: ValidatorSet = bincode::deserialize(&data).unwrap();
+    // let signed_header = sp1_zkvm::io::read::<Header>();
+    // let signed_header: SignedHeader = postcard::from_bytes(&signed_header).unwrap();
+    // let light_block_1 = sp1_zkvm::io::read::<LightBlock>();
+    // let light_block_2 = sp1_zkvm::io::read::<LightBlock>();
     println!("cycle-tracker-end: serde");
     println!("cycle-tracker-end: io");
 

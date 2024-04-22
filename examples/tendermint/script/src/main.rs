@@ -1,4 +1,8 @@
 use std::time::Duration;
+use tendermint::block::signed_header::SignedHeader;
+use tendermint::block::Commit;
+use tendermint::block::Header;
+use tendermint::validator::Set;
 use tokio::runtime::Runtime;
 
 use reqwest::Client;
@@ -10,9 +14,11 @@ use tendermint_light_client_verifier::types::LightBlock;
 use tendermint_light_client_verifier::ProdVerifier;
 use tendermint_light_client_verifier::Verdict;
 use tendermint_light_client_verifier::Verifier;
+use util::fetch_commit;
 
 use crate::util::fetch_latest_commit;
 use crate::util::fetch_light_block;
+use crate::util::fetch_validators;
 
 const TENDERMINT_ELF: &[u8] = include_bytes!("../../program/elf/riscv32im-succinct-zkvm-elf");
 mod util;
@@ -38,20 +44,51 @@ async fn get_light_blocks() -> (LightBlock, LightBlock) {
     (light_block_1, light_block_2)
 }
 
+async fn get_commit(block: u64) -> SignedHeader {
+    const BASE_URL: &str = "https://rpc.celestia-mocha.com";
+    let client = Client::new();
+    let url = format!("{}/commit", BASE_URL);
+    let latest_commit = fetch_commit(&client, &url, block).await.unwrap();
+    latest_commit.result.signed_header
+}
+
+async fn get_header(block: u64) -> Header {
+    const BASE_URL: &str = "https://rpc.celestia-mocha.com";
+    let client = Client::new();
+    let url = format!("{}/commit", BASE_URL);
+    let latest_commit = fetch_commit(&client, &url, block).await.unwrap();
+    latest_commit.result.signed_header.header
+}
+
+async fn get_validator_set(block: u64) -> Set {
+    const BASE_URL: &str = "https://rpc.celestia-mocha.com";
+    let client = Client::new();
+    let res = fetch_validators(&client, &format!("{}/validators", BASE_URL), block)
+        .await
+        .unwrap();
+    Set::new(res, None)
+}
+
 fn main() {
     // Generate proof.
     utils::setup_logger();
 
     // Use tokio runtime to get the light blocks.
     let rt = Runtime::new().unwrap();
-    let (light_block_1, light_block_2) = rt.block_on(async { get_light_blocks().await });
-
-    let expected_verdict = verify_blocks(light_block_1.clone(), light_block_2.clone());
+    // let (light_block_1, light_block_2) = rt.block_on(async { get_light_blocks().await });
+    let header = rt.block_on(async { get_header(500000).await });
+    // let validator_set = rt.block_on(async { get_validator_set(500000).await });
+    // let expected_verdict = verify_blocks(light_block_1.clone(), light_block_2.clone());
+    // let serialized = postcard::to_vec(&commit).unwrap();
 
     let mut stdin = SP1Stdin::new();
 
-    stdin.write(&light_block_1);
-    stdin.write(&light_block_2);
+    // let encoded = bincode::serialize(&validator_set).unwrap();
+    // stdin.write_vec(encoded);
+    stdin.write(&header);
+
+    // stdin.write(&light_block_1);
+    // stdin.write(&light_block_2);
 
     // let encoded_1 = serde_cbor::to_vec(&light_block_1).unwrap();
     // let encoded_2 = serde_cbor::to_vec(&light_block_2).unwrap();
