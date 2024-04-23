@@ -84,7 +84,7 @@ pub struct Runtime {
 
     pub emit_events: bool,
 
-    pub load_store_count :std::collections::HashMap<Opcode, u32>
+    pub load_store_count: std::collections::HashMap<Opcode, u32>,
 }
 
 impl Runtime {
@@ -133,7 +133,7 @@ impl Runtime {
             syscall_map,
             emit_events: true,
             max_syscall_cycles,
-            load_store_count: std::collections::HashMap::new()
+            load_store_count: std::collections::HashMap::new(),
         }
     }
 
@@ -519,7 +519,7 @@ impl Runtime {
         self.memory_accesses = MemoryAccessRecord::default();
 
         //For load-store benchmarking
-        match instruction.opcode{
+        match instruction.opcode {
             Opcode::LB | Opcode::LH | Opcode::LW | Opcode::LBU | Opcode::LHU => {
                 let count = self.load_store_count.entry(Opcode::LB).or_insert(0);
                 *count += 1;
@@ -966,7 +966,7 @@ impl Runtime {
                         _ => "Truly Other ??!?!?!",
                     };
                     format!("{:?}: {}", optype, count)
-    })
+                })
                 .collect::<Vec<String>>()
                 .join("\n")
         );

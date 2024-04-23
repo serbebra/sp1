@@ -15,6 +15,5 @@ fn fibonacci(n: u32) -> u32 {
 }
 
 pub fn main() {
-    let result = fibonacci(25);
-    println!("result: {}", result);
+    let result = fibonacci(100);
 }
