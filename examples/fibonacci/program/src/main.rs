@@ -3,6 +3,8 @@ sp1_zkvm::entrypoint!(main);
 
 use std::hint::black_box;
 
+#[no_mangle]
+#[inline(never)]
 fn fibonacci(n: u32) -> u32 {
     let mut a = 0;
     let mut b = 1;
@@ -15,5 +17,5 @@ fn fibonacci(n: u32) -> u32 {
 }
 
 pub fn main() {
-    let result = fibonacci(100);
+    let result = fibonacci(25);
 }

@@ -116,7 +116,6 @@ impl Runtime {
             .unwrap_or(0);
 
         let shard_size = env::shard_size() as u32;
-
         Self {
             record,
             state: ExecutionState::new(program.pc_start),
