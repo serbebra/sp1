@@ -135,6 +135,11 @@ impl<F: PrimeField> MachineAir<F> for ProgramChip {
             rows.into_iter().flatten().collect::<Vec<_>>(),
             NUM_PROGRAM_MULT_COLS,
         );
+        println!(
+            "Program Instructions: {}",
+            trace.values.len() / NUM_PROGRAM_MULT_COLS
+        );
+        println!("Instruction Count :{}", input.program.instructions.len());
 
         // Pad the trace to a power of two.
         pad_to_power_of_two::<NUM_PROGRAM_MULT_COLS, F>(&mut trace.values);

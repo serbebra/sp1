@@ -8,10 +8,12 @@ use std::hint::black_box;
 fn fibonacci(n: u32) -> u32 {
     let mut a = 0;
     let mut b = 1;
-    for _ in 0..n {
+    let mut i = 0;
+    while i != n {
         let tmp = a;
         a = b;
         b = tmp + b;
+        i += 1;
     }
     b
 }

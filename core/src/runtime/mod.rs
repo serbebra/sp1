@@ -1030,6 +1030,18 @@ impl Runtime {
                 *addr, &record,
             ));
         }
+        println!(
+            "Memory Finalize Events: {:?}",
+            self.record.memory_finalize_events.len()
+        );
+        println!(
+            "Memory Initialize Events: {:?}",
+            self.record.memory_initialize_events.len()
+        );
+        println!(
+            "Program Memory Events: {:?}",
+            self.program.memory_image.len()
+        );
     }
 
     fn get_syscall(&mut self, code: SyscallCode) -> Option<&Rc<dyn Syscall>> {

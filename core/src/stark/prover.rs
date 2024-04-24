@@ -303,9 +303,10 @@ where
             let permutation_width = permutation_traces[i].width();
             let total_width = trace_width + permutation_width;
             tracing::debug!(
-                "{:<11} | Cols = {:<5} | Rows = {:<5} | Main Cells = {:<10} | Main Cols = {:.2}% | Perm Cols = {:.2}%",
+                "{:<11} | Cols = {:<5} | Perm Cols = {:<5} | Rows = {:<5} | Main Cells = {:<10} | Main Cols = {:.2}% | Perm Cols = {:.2}%",
                 chips[i].name(),
                 total_width,
+                trace_width,
                 traces[i].height(),
                 trace_width * traces[i].height(),
                 (100f32 * trace_width as f32) / total_width as f32,
