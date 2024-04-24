@@ -176,23 +176,23 @@ where
         // Connect immediates.
         builder
             .when(local.instruction.imm_b)
-            .assert_block_eq::<AB::Var, AB::Var>(local.b.value, local.instruction.op_b);
+            .assert_block_eq::<AB::Var, AB::Var>(local.b.value(), local.instruction.op_b);
         builder
             .when(local.instruction.imm_c)
-            .assert_block_eq::<AB::Var, AB::Var>(local.c.value, local.instruction.op_c);
+            .assert_block_eq::<AB::Var, AB::Var>(local.c.value(), local.instruction.op_c);
 
         // Compute ALU.
         let alu_cols = local.opcode_specific.alu();
         builder.when(local.selectors.is_add).assert_eq(
-            local.b.value.0[0] + local.c.value.0[0],
+            local.b.value().0[0] + local.c.value().0[0],
             alu_cols.add_scratch[0],
         );
         builder.when(local.selectors.is_add).assert_eq(
-            local.b.value.0[0] - local.c.value.0[0],
+            local.b.value().0[0] - local.c.value().0[0],
             alu_cols.sub_scratch[0],
         );
         builder.when(local.selectors.is_add).assert_eq(
-            local.b.value.0[0] * local.c.value.0[0],
+            local.b.value().0[0] * local.c.value().0[0],
             alu_cols.mul_scratch[0],
         );
 
@@ -264,12 +264,20 @@ where
         // );
 
         let b_addr = local.fp + local.instruction.op_b[0];
-        // TODO: only evaluate the memory access when is_real * (1 - imm_b) is true.
-        builder.eval_memory_access(local.clk, b_addr, local.b, local.is_real.into());
+        // TODO: only evaluate the memory access when 1-imm_b is true.
+        builder.recursion_eval_memory_access(local.clk, b_addr, &local.b, local.is_real.into());
 
         let c_addr = local.fp + local.instruction.op_c[0];
+        // TODO: only evaluate the memory access when 1-imm_b is true.
+        builder.recursion_eval_memory_access(local.clk, c_addr, &local.c, local.is_real.into());
 
-        let a_addr = local.fp + local.instruction.op_a[0];
+        // TODO: conditions for when evaluating a as read or write is true.
+        let a_addr = local.fp + local.instruction.op_a;
+
+        // TODO: constraint a to be a "read" for appropriate opcodes.
+        // * branch instructions
+
+        // TODO: for Jump instructions, constraint a to be related to PC
 
         // let mut prog_interaction_vals: Vec<AB::Expr> = vec![local.instruction.opcode.into()];
         // prog_interaction_vals.push(local.instruction.op_a.into());

@@ -38,7 +38,7 @@ impl<F> MemoryRecord<F> {
         Self {
             addr,
             value,
-            prev_value: value,
+            prev_value: value.clone(),
             timestamp,
             prev_timestamp,
             _private: (),

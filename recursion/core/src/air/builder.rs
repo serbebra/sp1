@@ -5,13 +5,14 @@ use sp1_core::{
     lookup::InteractionKind,
     memory::MemoryAccessCols,
 };
+use std::iter::once;
 
 use super::Block;
 
-impl<AB: SP1AirBuilder> RecursionAirBuilder for AB {}
+impl<AB: BaseAirBuilder> RecursionAirBuilder for AB {}
 
 pub trait RecursionAirBuilder: BaseAirBuilder {
-    fn eval_memory_access_timestamp(
+    fn recursion_eval_memory_access_timestamp(
         &mut self,
         mem_access: &MemoryAccessCols<impl Into<Self::Expr>>,
         clk: impl Into<Self::Expr>,
@@ -23,7 +24,7 @@ pub trait RecursionAirBuilder: BaseAirBuilder {
     /// This implementation is almost 1-1 with the implementation in core/src/air/builder.rs::eval_memory_access
     /// except that it uses the crate's MemoryAccessCols instead of the one from sp1_core.
     /// In particular, it excludes shard.
-    fn eval_memory_access(
+    fn recursion_eval_memory_access(
         &mut self,
         clk: impl Into<Self::Expr>,
         addr: impl Into<Self::Expr>,
@@ -34,7 +35,7 @@ pub trait RecursionAirBuilder: BaseAirBuilder {
         let clk: Self::Expr = clk.into();
         let mem_access = memory_access.access();
 
-        self.eval_memory_access_timestamp(mem_access, clk, is_real);
+        self.recursion_eval_memory_access_timestamp(mem_access, clk, is_real);
 
         let addr = addr.into();
         let prev_clk = mem_access.prev_clk.clone().into();
@@ -50,14 +51,14 @@ pub trait RecursionAirBuilder: BaseAirBuilder {
         // The previous values get sent with multiplicity * 1, for "read".
         self.send(AirInteraction::new(
             prev_values,
-            do_check.clone(),
+            is_real.clone(),
             InteractionKind::Memory,
         ));
 
         // The current values get "received", i.e. multiplicity = -1
         self.receive(AirInteraction::new(
             current_values,
-            do_check.clone(),
+            is_real.clone(),
             InteractionKind::Memory,
         ));
     }

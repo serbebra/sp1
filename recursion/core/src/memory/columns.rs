@@ -26,7 +26,7 @@ pub struct MemoryReadCols<T> {
 #[derive(AlignedBorrow, Default, Debug, Clone, Copy)]
 #[repr(C)]
 pub struct MemoryWriteCols<T> {
-    pub prev_value: Word<T>,
+    pub prev_value: Block<T>,
     pub access: MemoryAccessCols<T>,
 }
 
@@ -34,7 +34,7 @@ pub struct MemoryWriteCols<T> {
 #[derive(AlignedBorrow, Default, Debug, Clone, Copy)]
 #[repr(C)]
 pub struct MemoryReadWriteCols<T> {
-    pub prev_value: Word<T>,
+    pub prev_value: Block<T>,
     pub access: MemoryAccessCols<T>,
 }
 
@@ -42,7 +42,7 @@ pub struct MemoryReadWriteCols<T> {
 #[repr(C)]
 pub struct MemoryAccessCols<T> {
     /// The value of the memory access.
-    pub value: Word<T>,
+    pub value: Block<T>,
 
     /// The previous timestamp that this memory access is being read from.
     pub prev_timestamp: T,
@@ -64,13 +64,13 @@ pub trait MemoryCols<T> {
 
     fn access_mut(&mut self) -> &mut MemoryAccessCols<T>;
 
-    fn prev_value(&self) -> &Word<T>;
+    fn prev_value(&self) -> &Block<T>;
 
-    fn prev_value_mut(&mut self) -> &mut Word<T>;
+    fn prev_value_mut(&mut self) -> &mut Block<T>;
 
-    fn value(&self) -> &Word<T>;
+    fn value(&self) -> &Block<T>;
 
-    fn value_mut(&mut self) -> &mut Word<T>;
+    fn value_mut(&mut self) -> &mut Block<T>;
 }
 
 impl<T> MemoryCols<T> for MemoryReadCols<T> {
@@ -82,19 +82,19 @@ impl<T> MemoryCols<T> for MemoryReadCols<T> {
         &mut self.access
     }
 
-    fn prev_value(&self) -> &Word<T> {
+    fn prev_value(&self) -> &Block<T> {
         &self.access.value
     }
 
-    fn prev_value_mut(&mut self) -> &mut Word<T> {
+    fn prev_value_mut(&mut self) -> &mut Block<T> {
         &mut self.access.value
     }
 
-    fn value(&self) -> &Word<T> {
+    fn value(&self) -> &Block<T> {
         &self.access.value
     }
 
-    fn value_mut(&mut self) -> &mut Word<T> {
+    fn value_mut(&mut self) -> &mut Block<T> {
         &mut self.access.value
     }
 }
@@ -108,19 +108,19 @@ impl<T> MemoryCols<T> for MemoryWriteCols<T> {
         &mut self.access
     }
 
-    fn prev_value(&self) -> &Word<T> {
+    fn prev_value(&self) -> &Block<T> {
         &self.prev_value
     }
 
-    fn prev_value_mut(&mut self) -> &mut Word<T> {
+    fn prev_value_mut(&mut self) -> &mut Block<T> {
         &mut self.prev_value
     }
 
-    fn value(&self) -> &Word<T> {
+    fn value(&self) -> &Block<T> {
         &self.access.value
     }
 
-    fn value_mut(&mut self) -> &mut Word<T> {
+    fn value_mut(&mut self) -> &mut Block<T> {
         &mut self.access.value
     }
 }
@@ -134,19 +134,19 @@ impl<T> MemoryCols<T> for MemoryReadWriteCols<T> {
         &mut self.access
     }
 
-    fn prev_value(&self) -> &Word<T> {
+    fn prev_value(&self) -> &Block<T> {
         &self.prev_value
     }
 
-    fn prev_value_mut(&mut self) -> &mut Word<T> {
+    fn prev_value_mut(&mut self) -> &mut Block<T> {
         &mut self.prev_value
     }
 
-    fn value(&self) -> &Word<T> {
+    fn value(&self) -> &Block<T> {
         &self.access.value
     }
 
-    fn value_mut(&mut self) -> &mut Word<T> {
+    fn value_mut(&mut self) -> &mut Block<T> {
         &mut self.access.value
     }
 }
