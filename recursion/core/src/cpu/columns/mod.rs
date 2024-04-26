@@ -22,13 +22,15 @@ pub struct CpuCols<T: Copy> {
     pub instruction: InstructionCols<T>,
     pub selectors: OpcodeSelectorCols<T>,
 
-    pub a: MemoryReadWriteCols<T>,
-    pub b: MemoryReadWriteCols<T>,
-    pub c: MemoryReadWriteCols<T>,
+    pub a: MemoryReadWriteCols<T>, // 11
+    pub b: MemoryReadWriteCols<T>, // 11
+    pub c: MemoryReadWriteCols<T>, // 11
     pub memory_addr: T,
-    pub memory: MemoryReadWriteCols<T>,
+    pub memory: MemoryReadWriteCols<T>, // 11
 
     pub opcode_specific: OpcodeSpecificCols<T>,
 
     pub is_real: T,
 }
+
+// 8 + 15

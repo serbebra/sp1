@@ -272,6 +272,7 @@ impl SP1Prover {
                     &deferred_proofs,
                     true,
                     false,
+                    false,
                 )
             }
         }
@@ -351,6 +352,7 @@ impl SP1Prover {
                     &[],
                     is_complete,
                     false,
+                    false,
                 );
                 SP1ReduceProofWrapper::Recursive(proof)
             })
@@ -398,6 +400,7 @@ impl SP1Prover {
                     proofs,
                     false,
                     false,
+                    false,
                 )
             })
             .collect::<Vec<_>>();
@@ -424,6 +427,7 @@ impl SP1Prover {
         deferred_proofs: &[ShardProof<InnerSC>],
         is_complete: bool,
         is_compressed: bool,
+        use_skinny_machine: bool,
     ) -> SP1ReduceProof<SC>
     where
         SC: StarkGenericConfig<Val = BabyBear>,
@@ -554,11 +558,13 @@ impl SP1Prover {
 
         // Generate proof.
         let start = Instant::now();
-        let proof = if is_compressed == 1 {
+        let proof = if use_skinny_machine {
+            tracing::debug!("using recursion skinny machine");
             let machine = RecursionAirSkinnyDeg7::machine(config);
             let mut challenger = machine.config().challenger();
             machine.prove::<LocalProver<_, _>>(pk, runtime.record.clone(), &mut challenger)
         } else {
+            tracing::debug!("using recursion wide machine");
             let machine = RecursionAirWideDeg3::machine(config);
             let mut challenger = machine.config().challenger();
             machine.prove::<LocalProver<_, _>>(pk, runtime.record.clone(), &mut challenger)
@@ -608,6 +614,7 @@ impl SP1Prover {
             &[],
             true,
             false,
+            true,
         )
     }
 
@@ -637,6 +644,7 @@ impl SP1Prover {
             state,
             &[SP1ReduceProofWrapper::Recursive(reduced_proof)],
             &[],
+            true,
             true,
             true,
         )
