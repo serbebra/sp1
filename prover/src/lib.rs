@@ -557,7 +557,7 @@ impl SP1Prover {
         runtime.witness_stream = witness_stream.into();
         runtime.run();
         let mut checkpoint = runtime.memory.clone();
-        let checkpoint_uninit = runtime.uninitialized_memory.clone();
+        let mut checkpoint_uninit = runtime.uninitialized_memory.clone();
 
         // Execute runtime.
         let machine = RecursionAirWideDeg3::machine(InnerSC::default());
@@ -567,6 +567,7 @@ impl SP1Prover {
         );
         checkpoint.iter_mut().for_each(|e| {
             e.1.timestamp = BabyBear::zero();
+            checkpoint_uninit.insert(*e.0, e.1.value);
         });
         runtime.memory = checkpoint;
         runtime.uninitialized_memory = checkpoint_uninit;
