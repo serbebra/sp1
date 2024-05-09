@@ -578,6 +578,10 @@ impl SP1Prover {
             runtime.nb_poseidons
         );
 
+        let (pk_test, _) = machine.setup(&self.recursion_program);
+        let mut challenger = machine.config().challenger();
+        machine.debug_constraints(&pk_test, runtime.record.clone(), &mut challenger);
+
         // Generate proof.
         let start = Instant::now();
         let proof = if proving_with_skinny && verifying_compressed_proof {
@@ -743,13 +747,10 @@ mod tests {
     use p3_field::PrimeField32;
     use serial_test::serial;
     use sp1_core::io::SP1Stdin;
-    use sp1_core::stark::MachineVerificationError;
     use sp1_core::utils::setup_logger;
 
     /// Tests an end-to-end workflow of proving a program across the entire proof generation
     /// pipeline.
-    ///
-    /// TODO: Remove the fact that we ignore [MachineVerificationError::NonZeroCumulativeSum].
     #[test]
     #[serial]
     fn test_e2e() {
@@ -773,23 +774,13 @@ mod tests {
         let compressed_proof = prover.compress(&vk, core_proof, vec![]);
 
         tracing::info!("verify compressed");
-        let result = prover.verify_compressed(&compressed_proof, &vk);
-        if let Err(MachineVerificationError::NonZeroCumulativeSum) = result {
-            tracing::warn!("non-zero cumulative sum for compress");
-        } else {
-            result.unwrap();
-        }
+        prover.verify_compressed(&compressed_proof, &vk).unwrap();
 
         tracing::info!("shrink");
         let shrink_proof = prover.shrink(&vk, compressed_proof);
 
         tracing::info!("verify shrink");
-        let result = prover.verify_shrink(&shrink_proof, &vk);
-        if let Err(MachineVerificationError::NonZeroCumulativeSum) = result {
-            tracing::warn!("non-zero cumulative sum for shrink");
-        } else {
-            result.unwrap();
-        }
+        prover.verify_shrink(&shrink_proof, &vk).unwrap();
 
         tracing::info!("wrap bn254");
         let wrapped_bn254_proof = prover.wrap_bn254(&vk, shrink_proof);
@@ -826,8 +817,6 @@ mod tests {
 
     /// Tests an end-to-end workflow of proving a program across the entire proof generation
     /// pipeline in addition to verifying deferred proofs.
-    ///
-    /// TODO: Remove the fact that we ignore [MachineVerificationError::NonZeroCumulativeSum].
     #[test]
     #[serial]
     fn test_e2e_with_deferred_proofs() {
