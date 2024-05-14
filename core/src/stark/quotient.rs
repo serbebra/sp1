@@ -19,6 +19,10 @@ use super::PackedVal;
 use super::StarkGenericConfig;
 use super::Val;
 
+extern "Rust" {
+    pub fn print_memory(message: &str);
+}
+
 #[allow(clippy::too_many_arguments)]
 pub fn quotient_values<SC, A, Mat>(
     chip: &Chip<Val<SC>, A>,
@@ -55,6 +59,12 @@ where
         PackedVal::<SC>::WIDTH,
         chip.name()
     );
+
+    println!("quotient size: {}", quotient_size);
+
+    unsafe {
+        print_memory(&format!("a {}", quotient_size));
+    }
 
     (0..quotient_size)
         .into_par_iter()

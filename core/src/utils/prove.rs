@@ -16,12 +16,12 @@ use crate::io::{SP1PublicValues, SP1Stdin};
 use crate::lookup::InteractionBuilder;
 use crate::runtime::ExecutionError;
 use crate::runtime::{ExecutionRecord, ShardingConfig};
-use crate::stark::DebugConstraintBuilder;
 use crate::stark::MachineProof;
 use crate::stark::ProverConstraintFolder;
 use crate::stark::StarkVerifyingKey;
 use crate::stark::Val;
 use crate::stark::VerifierConstraintFolder;
+use crate::stark::{to_mb, DebugConstraintBuilder};
 use crate::stark::{Com, PcsProverData, RiscvAir, ShardProof, StarkProvingKey, UniConfig};
 use crate::stark::{MachineRecord, StarkMachine};
 use crate::utils::env;
@@ -179,6 +179,7 @@ where
 
     // For each checkpoint, generate events and shard again, then prove the shards.
     let mut shard_proofs = Vec::<ShardProof<SC>>::new();
+    let mut total_cells = 0_u64;
     for mut checkpoint_file in checkpoints.into_iter() {
         let checkpoint_shards = {
             let mut events = trace_checkpoint(program.clone(), &checkpoint_file);
@@ -192,6 +193,10 @@ where
                 let config = machine.config();
                 let shard_data =
                     LocalProver::commit_main(config, &machine, &shard, shard.index() as usize);
+
+                for trace in &shard_data.traces {
+                    total_cells += (trace.values.len()) as u64;
+                }
 
                 let chip_ordering = shard_data.chip_ordering.clone();
                 let ordered_chips = machine
@@ -209,6 +214,7 @@ where
             .collect::<Vec<_>>();
         shard_proofs.append(&mut checkpoint_proofs);
     }
+    println!("trace size: {}", to_mb(total_cells * 4));
     let proof = MachineProof::<SC> { shard_proofs };
 
     // Print the summary.

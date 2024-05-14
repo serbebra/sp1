@@ -9,6 +9,20 @@ use tendermint_light_client_verifier::types::LightBlock;
 use tendermint_light_client_verifier::ProdVerifier;
 use tendermint_light_client_verifier::Verdict;
 use tendermint_light_client_verifier::Verifier;
+use peak_alloc::PeakAlloc;
+
+#[global_allocator]
+static PEAK_ALLOC: PeakAlloc = PeakAlloc;
+
+#[no_mangle]
+extern "Rust" fn print_memory(message: &str) {
+    let current_mb = PEAK_ALLOC.current_usage_as_mb();
+    let peak_mb = PEAK_ALLOC.peak_usage_as_mb();
+    println!(
+        "[mem] {}: current {} MB, peak {} MB",
+        message, current_mb, peak_mb
+    );
+}
 
 use crate::util::fetch_latest_commit;
 use crate::util::fetch_light_block;
@@ -62,7 +76,9 @@ fn main() {
 
     let client = ProverClient::new();
     let (pk, vk) = client.setup(TENDERMINT_ELF);
-        let proof = client.prove(&pk, stdin).expect("proving failed");
+    print_memory("before");
+    let proof = client.prove(&pk, stdin).expect("proving failed");
+    print_memory("after");
 
     // Verify proof.
     client

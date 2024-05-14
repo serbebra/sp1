@@ -2,7 +2,7 @@ use serde::de::DeserializeOwned;
 use serde::Serialize;
 use std::cmp::Reverse;
 use std::marker::PhantomData;
-use std::sync::atomic::{AtomicU32, Ordering};
+use std::sync::atomic::{AtomicU32, AtomicU64, Ordering};
 
 use itertools::Itertools;
 use p3_air::Air;
@@ -24,10 +24,15 @@ use super::{StarkProvingKey, VerifierConstraintFolder};
 use crate::air::MachineAir;
 use crate::lookup::InteractionBuilder;
 use crate::stark::record::MachineRecord;
-use crate::stark::MachineChip;
 use crate::stark::PackedChallenge;
 use crate::stark::ProverConstraintFolder;
+use crate::stark::{print_memory, MachineChip};
 use crate::utils::env;
+
+pub fn to_mb(bytes: u64) -> String {
+    let mb = bytes as f64 / 1024.0 / 1024.0;
+    format!("{:.2} MB", mb)
+}
 
 fn chunk_vec<T>(mut vec: Vec<T>, chunk_size: usize) -> Vec<Vec<T>> {
     let mut result = Vec::new();
@@ -102,6 +107,7 @@ where
         let shard_data_chunks = chunk_vec(shard_data, chunk_size);
         let shard_chunks = chunk_vec(shards, chunk_size);
         let parent_span = tracing::debug_span!("open_shards");
+        let total_cells = AtomicU64::new(0);
         let shard_proofs = parent_span.in_scope(|| {
             shard_data_chunks
                 .into_par_iter()
@@ -120,6 +126,12 @@ where
                                         data.materialize()
                                             .expect("failed to materialize shard main data")
                                     };
+                                    for trace in &data.traces {
+                                        total_cells.fetch_add(
+                                            trace.values.len() as u64 * trace.width as u64,
+                                            Ordering::Relaxed,
+                                        );
+                                    }
                                     let ordering = data.chip_ordering.clone();
                                     let chips =
                                         machine.shard_chips_ordered(&ordering).collect::<Vec<_>>();
@@ -139,6 +151,11 @@ where
                 .flatten()
                 .collect::<Vec<_>>()
         });
+
+        println!(
+            "total trace size: {}",
+            to_mb(total_cells.load(Ordering::Relaxed) * 4)
+        );
 
         MachineProof { shard_proofs }
     }
@@ -347,6 +364,7 @@ where
         // Compute the quotient values.
         let alpha: SC::Challenge = challenger.sample_ext_element::<SC::Challenge>();
         let parent_span = tracing::debug_span!("compute quotient values");
+        let quotient_cells = AtomicU64::new(0);
         let quotient_values = parent_span.in_scope(|| {
             quotient_domains
                 .into_par_iter()
@@ -377,6 +395,21 @@ where
                             let permutation_trace_on_quotient_domains = pcs
                                 .get_evaluations_on_domain(&permutation_data, i, *quotient_domain)
                                 .to_row_major_matrix();
+                            quotient_cells.fetch_add(
+                                preprocessed_trace_on_quotient_domains.values.len() as u64
+                                    + main_trace_on_quotient_domains.values.len() as u64
+                                    + permutation_trace_on_quotient_domains.values.len() as u64,
+                                Ordering::Relaxed,
+                            );
+
+                            unsafe {
+                                print_memory(&format!("quotient {}", i));
+                            }
+                            // quotient_cells +=
+                            //     preprocessed_trace_on_quotient_domains.values.len() as u64;
+                            // quotient_cells += main_trace_on_quotient_domains.values.len() as u64;
+                            // quotient_cells +=
+                            //     permutation_trace_on_quotient_domains.values.len() as u64;
                             quotient_values(
                                 chips[i],
                                 cumulative_sums[i],
@@ -393,6 +426,12 @@ where
                 })
                 .collect::<Vec<_>>()
         });
+        unsafe {
+            print_memory(&format!(
+                "quotient cells: {}",
+                to_mb(quotient_cells.fetch_add(0, Ordering::Relaxed) * 4)
+            ));
+        }
 
         // Split the quotient values and commit to them.
         let quotient_domains_and_chunks = quotient_domains
@@ -401,6 +440,9 @@ where
             .zip_eq(log_quotient_degrees.iter())
             .flat_map(
                 |((quotient_domain, quotient_values), log_quotient_degree)| {
+                    unsafe {
+                        print_memory(&format!("num quotient values: {}", quotient_values.len()));
+                    }
                     let quotient_degree = 1 << *log_quotient_degree;
                     let quotient_flat = RowMajorMatrix::new_col(quotient_values).flatten_to_base();
                     let quotient_chunks =
