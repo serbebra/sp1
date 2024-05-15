@@ -12,6 +12,7 @@ pub struct Poseidon2Cols<T: Copy> {
     pub right_input: T,
     pub rounds: [T; 24], // 1 round for memory input; 1 round for initialize; 8 rounds for external; 13 rounds for internal; 1 round for memory output
     pub round_specific_cols: RoundSpecificCols<T>,
+    pub is_real: T,
 }
 
 #[derive(AlignedBorrow, Clone, Copy)]

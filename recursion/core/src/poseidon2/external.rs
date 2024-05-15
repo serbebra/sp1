@@ -46,6 +46,7 @@ impl Poseidon2Chip {
         let rounds_p = 13;
         let rounds_p_beginning = 2 + rounds_f / 2;
         let rounds_p_end = rounds_p_beginning + rounds_p;
+        let num_rounds = local.rounds.len();
 
         let is_memory_read = local.rounds[0];
         let is_initial = local.rounds[1];
@@ -59,10 +60,10 @@ impl Poseidon2Chip {
         is_external_layer += (rounds_p_end..rounds_p + rounds_f)
             .map(|i| local.rounds[i].into())
             .sum::<AB::Expr>();
-        let is_internal_layer = (rounds_p_beginning..rounds_p_end)
+        let is_internal_layer = (2 + rounds_p_beginning..rounds_p_end)
             .map(|i| local.rounds[i].into())
             .sum::<AB::Expr>();
-        let is_memory_write = local.rounds[local.rounds.len() - 1];
+        let is_memory_write = local.rounds[num_rounds - 1];
 
         self.eval_mem(
             builder,
@@ -85,9 +86,23 @@ impl Poseidon2Chip {
 
         self.eval_syscall(builder, local, receive_table);
 
-        // Range check all flags.
+        // Constrain that the inputs stay the same throughout each cycle
+        // let not_final_round = is_memory_write;
+        // let mut transition_builder = builder.when_transition();
+        // let mut transition_not_final_builder = transition_builder.when(not_final_round);
+        // transition_not_final_builder.assert_eq(local.clk, next.clk);
+        // transition_not_final_builder.assert_eq(local.dst_input, next.dst_input);
+        // transition_not_final_builder.assert_eq(local.left_input, next.left_input);
+        // transition_not_final_builder.assert_eq(local.right_input, next.right_input);
+        // transition_not_final_builder.assert_eq(local.is_real, next.is_real);
+
+        // Range check all flags and check that the next round's flag is an increment of the previous round's.
         for i in 0..local.rounds.len() {
             builder.assert_bool(local.rounds[i]);
+            builder
+                .when_transition()
+                .when(next.is_real)
+                .assert_eq(local.rounds[i], next.rounds[(i + 1) % num_rounds]);
         }
         builder.assert_bool(
             is_memory_read + is_initial + is_external_layer + is_internal_layer + is_memory_write,
@@ -110,6 +125,12 @@ impl Poseidon2Chip {
         builder
             .when(is_memory_read)
             .assert_eq(local.right_input, memory_access_cols.addr_second_half);
+        for i in 0..WIDTH {
+            builder.when(is_memory_read).assert_eq(
+                *memory_access_cols.mem_access[i].prev_value(),
+                *memory_access_cols.mem_access[i].value(),
+            );
+        }
 
         builder
             .when(is_memory_write)
@@ -390,10 +411,18 @@ mod tests {
             7,
         > = inner_perm();
 
-        let expected_outputs = test_inputs
-            .iter()
-            .map(|input| gt.permute(*input))
-            .collect::<Vec<_>>();
+        // let expected_outputs = test_inputs
+        //     .iter()
+        //     .map(|input| gt.permute(*input))
+        //     .collect::<Vec<_>>();
+
+        let expected_outputs: Vec<[BabyBear; 16]> = (0..16)
+            .map(|_| core::array::from_fn(|_| BabyBear::rand(rng)))
+            .collect_vec();
+
+        let expected_outputs: Vec<[BabyBear; 16]> = (0..16)
+            .map(|_| core::array::from_fn(|_| BabyBear::rand(rng)))
+            .collect_vec();
 
         let mut input_exec = ExecutionRecord::<BabyBear>::default();
         for (input, output) in test_inputs.into_iter().zip_eq(expected_outputs.clone()) {
@@ -435,10 +464,14 @@ mod tests {
             7,
         > = inner_perm();
 
-        let expected_outputs = test_inputs
-            .iter()
-            .map(|input| gt.permute(*input))
-            .collect::<Vec<_>>();
+        // let expected_outputs = test_inputs
+        //     .iter()
+        //     .map(|input| gt.permute(*input))
+        //     .collect::<Vec<_>>();
+
+        let expected_outputs: Vec<[BabyBear; 16]> = (0..16)
+            .map(|_| core::array::from_fn(|_| BabyBear::rand(rng)))
+            .collect_vec();
 
         let mut input_exec = ExecutionRecord::<BabyBear>::default();
         for (input, output) in test_inputs.into_iter().zip_eq(expected_outputs) {

@@ -460,6 +460,7 @@ mod tests {
     use sp1_core::air::MachineAir;
     use sp1_core::stark::StarkGenericConfig;
     use sp1_core::utils::{inner_perm, uni_stark_prove, uni_stark_verify, BabyBearPoseidon2};
+    use zkhash::ark_ff::UniformRand;
 
     fn generate_trace_degree<const DEGREE: usize>() {
         let chip = Poseidon2WideChip::<DEGREE> {
@@ -480,6 +481,8 @@ mod tests {
             16,
             7,
         > = inner_perm();
+
+        let rng = &mut rand::thread_rng();
 
         let expected_outputs = test_inputs
             .iter()

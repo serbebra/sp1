@@ -77,6 +77,7 @@ impl<F: PrimeField32> MachineAir<F> for Poseidon2Chip {
                 cols.left_input = poseidon2_event.left;
                 cols.right_input = poseidon2_event.right;
                 cols.rounds[r] = F::one();
+                cols.is_real = F::one();
 
                 if is_memory_read || is_memory_write {
                     let memory_access_cols = cols.round_specific_cols.memory_access_mut();
